@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Benchmark Reel Generator</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+  :root{
+    --bg:#0a0e14; --panel:#11161f; --border:#1e2530;
+    --fg:#e8edf4; --dim:#6b7789; --dim2:#48505e;
+    --cyan:#3fd0ff; --amber:#ffb454; --green:#5fe38a; --red:#ff6b6b;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--bg); color:var(--fg);
+    font-family:'Inter',sans-serif; padding:24px; min-height:100vh;
+  }
+  .mono{font-family:'IBM Plex Mono',monospace;}
+  h1{font-size:18px;font-weight:800;margin:0 0 2px 0;}
+  .sub{color:var(--dim);font-size:12.5px;font-family:'IBM Plex Mono',monospace;margin-bottom:20px;}
+
+  .layout{display:grid;grid-template-columns:340px 1fr;gap:16px;align-items:start;}
+  @media (max-width:1000px){.layout{grid-template-columns:1fr;}}
+
+  .panel{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:16px;}
+  .panel + .panel{margin-top:12px;}
+  .panel-title{font-size:11px;color:var(--dim);font-weight:700;letter-spacing:0.6px;text-transform:uppercase;margin-bottom:10px;}
+
+  textarea{
+    width:100%;height:110px;background:#0c1119;border:1px solid var(--border);color:var(--fg);
+    border-radius:7px;padding:8px 10px;font-family:'IBM Plex Mono',monospace;font-size:11px;resize:vertical;
+  }
+  input[type=file]{font-size:11px;color:var(--dim);width:100%;margin-top:8px;}
+  select,input[type=text]{
+    background:#0c1119;border:1px solid var(--border);color:var(--fg);padding:7px 9px;border-radius:7px;
+    font-family:'IBM Plex Mono',monospace;font-size:12px;width:100%;
+  }
+  label{font-size:10.5px;color:var(--dim);font-weight:600;letter-spacing:0.4px;text-transform:uppercase;display:block;margin:10px 0 5px;}
+
+  button{
+    font-family:'Inter',sans-serif;font-weight:700;font-size:12.5px;border:none;border-radius:7px;
+    padding:9px 14px;cursor:pointer;transition:opacity .15s ease, transform .1s ease;width:100%;margin-top:8px;
+  }
+  button:active{transform:scale(0.98);}
+  button:disabled{opacity:0.35;cursor:not-allowed;}
+  .btn-primary{background:var(--cyan);color:#04121a;}
+  .btn-primary:hover:not(:disabled){opacity:0.88;}
+  .btn-record{background:var(--red);color:#fff;}
+  .btn-record:hover:not(:disabled){opacity:0.88;}
+  .btn-record.active{animation:recpulse 1s infinite;}
+  @keyframes recpulse{0%,100%{opacity:1;}50%{opacity:0.6;}}
+  .btn-ghost{background:transparent;border:1px solid var(--border);color:var(--fg);}
+  .btn-ghost:hover:not(:disabled){border-color:var(--cyan);color:var(--cyan);}
+  .btn-small{width:auto;padding:6px 10px;font-size:11px;margin:0;}
+
+  .report-list{display:flex;flex-direction:column;gap:6px;margin-top:8px;}
+  .report-item{
+    display:flex;align-items:center;gap:8px;background:#0c1119;border:1px solid var(--border);
+    border-radius:7px;padding:8px 10px;font-size:12px;
+  }
+  .report-item .ri-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .report-item .ri-tps{color:var(--cyan);font-family:'IBM Plex Mono',monospace;font-size:11px;}
+  .report-item .ri-remove{background:transparent;border:none;color:var(--dim);cursor:pointer;width:auto;padding:2px 6px;margin:0;font-size:14px;}
+  .report-item .ri-remove:hover{color:var(--red);}
+  .empty-hint{color:var(--dim2);font-size:11.5px;font-style:italic;padding:6px 0;}
+
+  .stage-wrap{background:#000;border:1px solid var(--border);border-radius:10px;overflow:hidden;position:relative;}
+  #stage{width:100%;display:block;background:#000;}
+  .rec-badge{
+    position:absolute;top:14px;right:14px;background:rgba(255,107,107,0.15);color:var(--red);
+    font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;padding:4px 10px;border-radius:5px;
+    display:none;align-items:center;gap:6px;
+  }
+  .rec-badge.show{display:flex;}
+  .rec-dot{width:7px;height:7px;border-radius:50%;background:var(--red);animation:recpulse 1s infinite;}
+
+  .transport{display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap;}
+  .transport button{width:auto;margin:0;}
+  .progress-track{flex:1;height:5px;background:#1a212c;border-radius:3px;overflow:hidden;min-width:120px;}
+  .progress-fill{height:100%;background:var(--cyan);width:0%;transition:width .1s linear;}
+  .scene-label{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--dim);min-width:150px;}
+
+  .row{display:flex;gap:8px;}
+  .row > *{flex:1;}
+  .note{font-size:11px;color:var(--dim2);line-height:1.6;margin-top:10px;font-family:'IBM Plex Mono',monospace;}
+</style>
+</head>
+<body>
+
+<h1>BENCHMARK REEL GENERATOR</h1>
+<div class="sub">turns finished report JSON into an animated scene sequence — capture in OBS, or export straight to WebM</div>
+
+<div class="layout">
+  <!-- LEFT: controls -->
+  <div>
+    <div class="panel">
+      <div class="panel-title">Load Report(s)</div>
+      <label>Paste report JSON</label>
+      <textarea id="jsonInput" placeholder='{"model": "...", "gpu": "...", "backend": "...", "avg_tokens_per_sec": 38.7, ...}'></textarea>
+      <button class="btn-ghost" id="addJsonBtn">+ Add pasted JSON</button>
+      <label>...or upload .json file(s)</label>
+      <input type="file" id="fileInput" accept=".json" multiple>
+      <button class="btn-ghost" id="sampleBtn">Load 3 sample reports</button>
+
+      <label style="margin-top:14px;">Loaded reports (played in this order)</label>
+      <div class="report-list" id="reportList"></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Reel Settings</div>
+      <label>Pace</label>
+      <select id="paceSel">
+        <option value="0.7">Fast — punchy, short holds</option>
+        <option value="1" selected>Normal</option>
+        <option value="1.35">Cinematic — slower reveals</option>
+      </select>
+      <label>Series title (intro card)</label>
+      <input type="text" id="titleInput" value="LOCAL AI BENCHMARK">
+      <label>Series subtitle</label>
+      <input type="text" id="subInput" value="GPU Comparison Series">
+      <div class="row" style="margin-top:12px;">
+        <label style="margin:0;">
+          <input type="checkbox" id="leaderboardChk" checked style="width:auto;"> Add leaderboard scene (2+ reports)
+        </label>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT: stage -->
+  <div>
+    <div class="stage-wrap">
+      <canvas id="stage" width="1920" height="1080"></canvas>
+      <div class="rec-badge" id="recBadge"><div class="rec-dot"></div>REC</div>
+    </div>
+    <div class="transport">
+      <button class="btn-primary" id="playBtn">▶ Play (for OBS capture)</button>
+      <button class="btn-ghost" id="stopBtn" disabled>■ Stop</button>
+      <button class="btn-record" id="recordBtn">⏺ Record &amp; Export WebM</button>
+      <div class="scene-label" id="sceneLabel">no reel built yet</div>
+      <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+    </div>
+    <div class="note" id="statusNote">
+      Load at least one report, then hit Play to preview, or Record to export a WebM file directly (no editing software needed).
+      WebM plays natively in most editors; convert to mp4 with: ffmpeg -i reel.webm -c:v libx264 -pix_fmt yuv420p reel.mp4
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================ canvas setup
+const canvas = document.getElementById('stage');
+const ctx = canvas.getContext('2d');
+const W = canvas.width, H = canvas.height;
+
+// ============================================================ report store
+let reports = [];
+
+function normalizeReport(raw){
+  // Accept either the flat "summary" object, or {"summary": {...}} wrapper
+  const s = raw.summary ? raw.summary : raw;
+  return {
+    model: s.model || 'unknown-model',
+    gpu: s.gpu || 'unknown-gpu',
+    backend: s.backend || 'unknown-backend',
+    avg_tokens_per_sec: s.avg_tokens_per_sec ?? null,
+    avg_ttft_s: s.avg_ttft_s ?? null,
+    avg_gpu_util_pct: s.avg_gpu_util_pct ?? null,
+    peak_gpu_util_pct: s.peak_gpu_util_pct ?? null,
+    peak_vram_mb: s.peak_vram_mb ?? null,
+    avg_gpu_temp_c: s.avg_gpu_temp_c ?? null,
+    peak_gpu_temp_c: s.peak_gpu_temp_c ?? null,
+    avg_gpu_power_w: s.avg_gpu_power_w ?? null,
+    avg_cpu_pct: s.avg_cpu_pct ?? null,
+    peak_ram_mb: s.peak_ram_mb ?? null,
+  };
+}
+
+function renderReportList(){
+  const el = document.getElementById('reportList');
+  if (!reports.length){
+    el.innerHTML = '<div class="empty-hint">No reports loaded yet.</div>';
+    return;
+  }
+  el.innerHTML = reports.map((r,i) => `
+    <div class="report-item">
+      <div class="ri-name">${r.model} <span style="color:var(--dim2)">· ${r.gpu}</span></div>
+      <div class="ri-tps">${r.avg_tokens_per_sec != null ? r.avg_tokens_per_sec.toFixed(1)+' t/s' : 'n/a'}</div>
+      <button class="ri-remove" data-idx="${i}">×</button>
+    </div>
+  `).join('');
+  el.querySelectorAll('.ri-remove').forEach(btn => {
+    btn.addEventListener('click', () => {
+      reports.splice(parseInt(btn.dataset.idx), 1);
+      renderReportList();
+      buildTimeline();
+    });
+  });
+}
+
+document.getElementById('addJsonBtn').addEventListener('click', () => {
+  const raw = document.getElementById('jsonInput').value.trim();
+  if (!raw) return;
+  try {
+    const parsed = JSON.parse(raw);
+    reports.push(normalizeReport(parsed));
+    document.getElementById('jsonInput').value = '';
+    renderReportList();
+    buildTimeline();
+  } catch(e) {
+    alert('Could not parse JSON: ' + e.message);
+  }
+});
+
+document.getElementById('fileInput').addEventListener('change', async (e) => {
+  for (const file of e.target.files){
+    try {
+      const text = await file.text();
+      reports.push(normalizeReport(JSON.parse(text)));
+    } catch(err){ console.error('Failed to load', file.name, err); }
+  }
+  renderReportList();
+  buildTimeline();
+  e.target.value = '';
+});
+
+document.getElementById('sampleBtn').addEventListener('click', () => {
+  reports = [
+    {model:'llama3.1:8b-q4_K_M', gpu:'[NVIDIA] RTX 3060 12GB', backend:'Ollama',
+     avg_tokens_per_sec:34.2, avg_ttft_s:0.41, avg_gpu_util_pct:86, peak_gpu_util_pct:98,
+     peak_vram_mb:6120, avg_gpu_temp_c:67, peak_gpu_temp_c:74, avg_gpu_power_w:142, avg_cpu_pct:21, peak_ram_mb:8200},
+    {model:'llama3.1:8b-q4_K_M', gpu:'[AMD] RX 6800 XT 16GB', backend:'Ollama',
+     avg_tokens_per_sec:28.9, avg_ttft_s:0.52, avg_gpu_util_pct:91, peak_gpu_util_pct:99,
+     peak_vram_mb:6480, avg_gpu_temp_c:71, peak_gpu_temp_c:79, avg_gpu_power_w:195, avg_cpu_pct:24, peak_ram_mb:8350},
+    {model:'llama3.1:8b-q4_K_M', gpu:'[NVIDIA] RTX 4090 24GB', backend:'Ollama',
+     avg_tokens_per_sec:89.4, avg_ttft_s:0.18, avg_gpu_util_pct:78, peak_gpu_util_pct:95,
+     peak_vram_mb:6350, avg_gpu_temp_c:59, peak_gpu_temp_c:66, avg_gpu_power_w:265, avg_cpu_pct:19, peak_ram_mb:8100},
+  ];
+  renderReportList();
+  buildTimeline();
+});
+
+// ============================================================ background fx
+const particles = Array.from({length:60}, () => ({
+  x: Math.random()*W, y: Math.random()*H,
+  r: 1+Math.random()*2.2, speed: 8+Math.random()*22,
+  phase: Math.random()*Math.PI*2,
+}));
+
+function drawBackground(t){
+  ctx.fillStyle = '#070a0f';
+  ctx.fillRect(0,0,W,H);
+
+  const g = ctx.createRadialGradient(W*0.25,H*0.15,0, W*0.25,H*0.15, W*0.7);
+  g.addColorStop(0,'rgba(63,208,255,0.10)');
+  g.addColorStop(1,'rgba(63,208,255,0)');
+  ctx.fillStyle = g;
+  ctx.fillRect(0,0,W,H);
+
+  ctx.strokeStyle = 'rgba(63,208,255,0.07)';
+  ctx.lineWidth = 1;
+  const spacing = 90;
+  const offset = (t*30) % spacing;
+  for (let y = -spacing; y < H+spacing; y += spacing){
+    const yy = y + offset;
+    ctx.beginPath(); ctx.moveTo(0,yy); ctx.lineTo(W,yy); ctx.stroke();
+  }
+  for (let x = 0; x < W; x += 160){
+    ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke();
+  }
+
+  particles.forEach(p => {
+    const y = ((p.y - t*p.speed) % (H+40) + (H+40)) % (H+40) - 20;
+    const twinkle = 0.3 + 0.7*Math.abs(Math.sin(t*1.2 + p.phase));
+    ctx.beginPath();
+    ctx.arc(p.x, y, p.r, 0, Math.PI*2);
+    ctx.fillStyle = `rgba(63,208,255,${0.25*twinkle})`;
+    ctx.fill();
+  });
+
+  const scanY = (t*140) % H;
+  const sg = ctx.createLinearGradient(0,scanY-2,0,scanY+2);
+  sg.addColorStop(0,'rgba(95,227,138,0)');
+  sg.addColorStop(0.5,'rgba(95,227,138,0.10)');
+  sg.addColorStop(1,'rgba(95,227,138,0)');
+  ctx.fillStyle = sg;
+  ctx.fillRect(0,scanY-2,W,4);
+
+  const vg = ctx.createRadialGradient(W/2,H/2,H*0.35, W/2,H/2,H*0.85);
+  vg.addColorStop(0,'rgba(0,0,0,0)');
+  vg.addColorStop(1,'rgba(0,0,0,0.55)');
+  ctx.fillStyle = vg;
+  ctx.fillRect(0,0,W,H);
+}
+
+// ============================================================ draw helpers
+function easeOutCubic(x){ return 1 - Math.pow(1-x, 3); }
+
+function fadeWindow(p, inFrac=0.18, outFrac=0.18){
+  if (p < inFrac) return easeOutCubic(p/inFrac);
+  if (p > 1-outFrac) return 1-easeOutCubic((p-(1-outFrac))/outFrac);
+  return 1;
+}
+
+function glowText(text, x, y, size, weight, color, opacity, glow=22, font='Inter', align='left'){
+  ctx.save();
+  ctx.globalAlpha = opacity;
+  ctx.font = `${weight} ${size}px "${font}"`;
+  ctx.textAlign = align;
+  ctx.textBaseline = 'alphabetic';
+  ctx.shadowColor = color;
+  ctx.shadowBlur = glow;
+  ctx.fillStyle = color;
+  ctx.fillText(text, x, y);
+  ctx.restore();
+}
+
+function plainText(text, x, y, size, weight, color, opacity, font='Inter', align='left'){
+  ctx.save();
+  ctx.globalAlpha = opacity;
+  ctx.font = `${weight} ${size}px "${font}"`;
+  ctx.textAlign = align;
+  ctx.fillStyle = color;
+  ctx.fillText(text, x, y);
+  ctx.restore();
+}
+
+function fmtNum(v, digits=1, suffix=''){
+  return v==null ? 'N/A' : v.toFixed(digits)+suffix;
+}
+
+// ============================================================ scenes
+function sceneIntro(p, data){
+  const op = fadeWindow(p, 0.25, 0.2);
+  const rise = (1-easeOutCubic(Math.min(1,p/0.3)))*40;
+  glowText(data.title, W/2, H/2-20+rise, 96, 900, '#e8edf4', op, 30, 'Inter', 'center');
+  plainText(data.subtitle, W/2, H/2+50+rise, 30, 500, '#3fd0ff', op*0.95, 'IBM Plex Mono', 'center');
+  ctx.save();
+  ctx.globalAlpha = op;
+  ctx.strokeStyle = '#3fd0ff';
+  ctx.lineWidth = 2;
+  const lw = 220 * easeOutCubic(Math.min(1,p/0.35));
+  ctx.beginPath(); ctx.moveTo(W/2-lw/2, H/2+80); ctx.lineTo(W/2+lw/2, H/2+80); ctx.stroke();
+  ctx.restore();
+}
+
+function sceneModelTitle(p, r){
+  const op = fadeWindow(p);
+  plainText('NOW BENCHMARKING', W/2, H/2-140, 22, 700, '#6b7789', op, 'IBM Plex Mono', 'center');
+  glowText(r.model, W/2, H/2-40, 72, 800, '#e8edf4', op, 26, 'Inter', 'center');
+  ctx.save();
+  ctx.globalAlpha = op;
+  const badgeY = H/2+40;
+  drawBadge(r.gpu, W/2-260, badgeY, '#3fd0ff');
+  drawBadge(r.backend, W/2+40, badgeY, '#5fe38a');
+  ctx.restore();
+}
+
+function drawBadge(text, x, y, color){
+  ctx.save();
+  ctx.font = '600 22px "IBM Plex Mono"';
+  const paddingX = 22;
+  const w = ctx.measureText(text).width + paddingX*2;
+  const h = 46;
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 1.5;
+  roundRect(ctx, x, y, w, h, 8);
+  ctx.stroke();
+  ctx.fillStyle = color;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(text, x+w/2, y+h/2+1);
+  ctx.restore();
+  return w;
+}
+
+function roundRect(ctx,x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);
+  ctx.arcTo(x+w,y,x+w,y+h,r);
+  ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r);
+  ctx.arcTo(x,y,x+w,y,r);
+  ctx.closePath();
+}
+
+function sceneHeroStats(p, r){
+  const op = fadeWindow(p);
+  const countP = easeOutCubic(Math.min(1, p/0.55));
+  const tps = r.avg_tokens_per_sec != null ? r.avg_tokens_per_sec*countP : null;
+  const ttft = r.avg_ttft_s != null ? r.avg_ttft_s*countP : null;
+
+  plainText(r.model, W/2, H/2-260, 26, 600, '#6b7789', op, 'IBM Plex Mono', 'center');
+
+  plainText('AVG TOKENS / SEC', W/2-320, H/2-140, 22, 700, '#6b7789', op, 'Inter', 'center');
+  glowText(fmtNum(tps,1), W/2-320, H/2-30, 130, 800, '#3fd0ff', op, 40, 'IBM Plex Mono', 'center');
+
+  plainText('TIME TO FIRST TOKEN', W/2+320, H/2-140, 22, 700, '#6b7789', op, 'Inter', 'center');
+  glowText(fmtNum(ttft,2,'s'), W/2+320, H/2-30, 130, 800, '#5fe38a', op, 40, 'IBM Plex Mono', 'center');
+
+  ctx.save();
+  ctx.globalAlpha = op*0.5;
+  ctx.strokeStyle = '#1e2530';
+  ctx.beginPath(); ctx.moveTo(W/2,H/2-190); ctx.lineTo(W/2,H/2+20); ctx.stroke();
+  ctx.restore();
+}
+
+function sceneSecondaryStats(p, r){
+  const op = fadeWindow(p);
+  plainText(r.model + '  —  detailed telemetry', W/2, 170, 30, 700, '#e8edf4', op, 'Inter', 'center');
+
+  const stats = [
+    ['GPU UTIL (AVG / PEAK)', `${fmtNum(r.avg_gpu_util_pct,0,'%')} / ${fmtNum(r.peak_gpu_util_pct,0,'%')}`],
+    ['VRAM PEAK', fmtNum(r.peak_vram_mb,0,' MB')],
+    ['GPU TEMP (AVG / PEAK)', `${fmtNum(r.avg_gpu_temp_c,0,'°C')} / ${fmtNum(r.peak_gpu_temp_c,0,'°C')}`],
+    ['GPU POWER (AVG)', fmtNum(r.avg_gpu_power_w,0,' W')],
+    ['CPU AVG', fmtNum(r.avg_cpu_pct,0,'%')],
+    ['RAM PEAK', fmtNum(r.peak_ram_mb,0,' MB')],
+  ];
+  const cols = 3, colW = 520, rowH = 150;
+  const startX = W/2 - (cols*colW)/2 + colW/2;
+  const startY = 380;
+  stats.forEach((s,i) => {
+    const col = i%cols, row = Math.floor(i/cols);
+    const stagger = Math.min(1, Math.max(0, (p-0.15-i*0.05)/0.4));
+    const localOp = op*easeOutCubic(stagger);
+    const rise = (1-easeOutCubic(stagger))*24;
+    const x = startX + col*colW, y = startY + row*rowH + rise;
+    plainText(s[0], x, y, 18, 700, '#6b7789', localOp, 'Inter', 'center');
+    plainText(s[1], x, y+46, 34, 600, '#e8edf4', localOp, 'IBM Plex Mono', 'center');
+  });
+}
+
+function sceneLeaderboard(p, allReports){
+  const op = fadeWindow(p, 0.12, 0.15);
+  plainText('TOKENS / SEC — RESULTS', W/2, 150, 34, 800, '#e8edf4', op, 'Inter', 'center');
+
+  const sorted = [...allReports].sort((a,b) => (b.avg_tokens_per_sec||0)-(a.avg_tokens_per_sec||0));
+  const maxTps = Math.max(...sorted.map(r=>r.avg_tokens_per_sec||0), 1);
+  const barMaxW = 1100, barH = 64, gap = 26;
+  const totalH = sorted.length*(barH+gap)-gap;
+  const startY = H/2 - totalH/2 + 40;
+  const startX = W/2 - barMaxW/2;
+
+  sorted.forEach((r,i) => {
+    const stagger = Math.min(1, Math.max(0, (p-0.15-i*0.12)/0.5));
+    const growP = easeOutCubic(stagger);
+    const localOp = op*Math.min(1,stagger*3);
+    const y = startY + i*(barH+gap);
+    const w = barMaxW * ((r.avg_tokens_per_sec||0)/maxTps) * growP;
+
+    const isFirst = i===0;
+    const barColor = isFirst ? '#3fd0ff' : '#2a3441';
+    ctx.save();
+    ctx.globalAlpha = localOp;
+    roundRect(ctx, startX, y, Math.max(2,w), barH, 8);
+    ctx.fillStyle = barColor;
+    if (isFirst){ ctx.shadowColor='#3fd0ff'; ctx.shadowBlur=24; }
+    ctx.fill();
+    ctx.restore();
+
+    plainText(`${r.model}  ·  ${r.gpu}`, startX, y-10, 18, 600, '#8b949e', localOp, 'IBM Plex Mono', 'left');
+    plainText(fmtNum(r.avg_tokens_per_sec,1,' tok/s'), startX + Math.max(2,w) + 16, y+barH/2+7, 24, 700,
+               isFirst ? '#3fd0ff' : '#e8edf4', localOp, 'IBM Plex Mono', 'left');
+  });
+}
+
+function sceneOutro(p, data){
+  const op = fadeWindow(p, 0.2, 0.3);
+  glowText('Full breakdown in the video', W/2, H/2-10, 52, 800, '#e8edf4', op, 24, 'Inter', 'center');
+  plainText('local ai benchmark panel', W/2, H/2+50, 22, 500, '#3fd0ff', op*0.9, 'IBM Plex Mono', 'center');
+}
+
+// ============================================================ timeline
+let timeline = [];
+let playing = false;
+let recording = false;
+let mediaRecorder = null;
+let recordedChunks = [];
+let animStart = null;
+let loopMode = true;
+
+function baseDurations(){
+  const pace = parseFloat(document.getElementById('paceSel').value);
+  return {
+    intro: 3.0*pace, model: 2.3*pace, hero: 4.2*pace,
+    secondary: 4.8*pace, leaderboard: 5.5*pace, outro: 3.2*pace,
+  };
+}
+
+function buildTimeline(){
+  const d = baseDurations();
+  const title = document.getElementById('titleInput').value || 'BENCHMARK';
+  const subtitle = document.getElementById('subInput').value || '';
+  const wantLeaderboard = document.getElementById('leaderboardChk').checked;
+
+  timeline = [];
+  if (!reports.length){
+    document.getElementById('sceneLabel').textContent = 'no reel built yet';
+    return;
+  }
+  timeline.push({type:'intro', dur:d.intro, data:{title, subtitle}, label:'Intro'});
+  reports.forEach(r => {
+    timeline.push({type:'model', dur:d.model, data:r, label:`${r.model} — title`});
+    timeline.push({type:'hero', dur:d.hero, data:r, label:`${r.model} — hero stats`});
+    timeline.push({type:'secondary', dur:d.secondary, data:r, label:`${r.model} — telemetry`});
+  });
+  if (wantLeaderboard && reports.length > 1){
+    timeline.push({type:'leaderboard', dur:d.leaderboard, data:reports, label:'Leaderboard'});
+  }
+  timeline.push({type:'outro', dur:d.outro, data:{}, label:'Outro'});
+
+  const total = timeline.reduce((a,s)=>a+s.dur,0);
+  document.getElementById('sceneLabel').textContent = `${timeline.length} scenes · ${total.toFixed(1)}s`;
+}
+
+function drawScene(type, p, data){
+  if (type==='intro') sceneIntro(p, data);
+  else if (type==='model') sceneModelTitle(p, data);
+  else if (type==='hero') sceneHeroStats(p, data);
+  else if (type==='secondary') sceneSecondaryStats(p, data);
+  else if (type==='leaderboard') sceneLeaderboard(p, data);
+  else if (type==='outro') sceneOutro(p, data);
+}
+
+function totalDuration(){
+  return timeline.reduce((a,s)=>a+s.dur,0);
+}
+
+function frame(now){
+  if (!playing) return;
+  if (animStart===null) animStart = now;
+  let elapsed = (now-animStart)/1000;
+  const total = totalDuration();
+
+  if (elapsed >= total){
+    if (loopMode && !recording){
+      animStart = now;
+      elapsed = 0;
+    } else {
+      drawAtTime(total-0.001);
+      stopPlayback();
+      if (recording) finishRecording();
+      return;
+    }
+  }
+  drawAtTime(elapsed);
+  document.getElementById('progressFill').style.width = (elapsed/total*100)+'%';
+  requestAnimationFrame(frame);
+}
+
+function drawAtTime(elapsed){
+  drawBackground(elapsed);
+  let acc = 0;
+  for (const scene of timeline){
+    if (elapsed < acc+scene.dur){
+      const p = (elapsed-acc)/scene.dur;
+      drawScene(scene.type, p, scene.data);
+      document.getElementById('sceneLabel').textContent = scene.label;
+      break;
+    }
+    acc += scene.dur;
+  }
+}
+
+// ============================================================ transport
+async function ensureFontsReady(){
+  await document.fonts.load('800 96px Inter');
+  await document.fonts.load('700 22px "IBM Plex Mono"');
+  await document.fonts.ready;
+}
+
+document.getElementById('playBtn').addEventListener('click', async () => {
+  if (!timeline.length) buildTimeline();
+  if (!timeline.length) { alert('Load at least one report first.'); return; }
+  await ensureFontsReady();
+  playing = true;
+  loopMode = true;
+  animStart = null;
+  document.getElementById('playBtn').disabled = true;
+  document.getElementById('stopBtn').disabled = false;
+  requestAnimationFrame(frame);
+});
+
+document.getElementById('stopBtn').addEventListener('click', stopPlayback);
+
+function stopPlayback(){
+  playing = false;
+  animStart = null;
+  document.getElementById('playBtn').disabled = false;
+  document.getElementById('stopBtn').disabled = true;
+  document.getElementById('progressFill').style.width = '0%';
+}
+
+document.getElementById('recordBtn').addEventListener('click', async () => {
+  if (recording) return;
+  if (!timeline.length) buildTimeline();
+  if (!timeline.length) { alert('Load at least one report first.'); return; }
+  await ensureFontsReady();
+
+  const stream = canvas.captureStream(30);
+  let mimeType = 'video/webm;codecs=vp9';
+  if (!MediaRecorder.isTypeSupported(mimeType)) mimeType = 'video/webm;codecs=vp8';
+  if (!MediaRecorder.isTypeSupported(mimeType)) mimeType = 'video/webm';
+
+  recordedChunks = [];
+  mediaRecorder = new MediaRecorder(stream, {mimeType, videoBitsPerSecond: 12000000});
+  mediaRecorder.ondataavailable = (e) => { if (e.data.size>0) recordedChunks.push(e.data); };
+  mediaRecorder.onstop = () => {
+    const blob = new Blob(recordedChunks, {type:'video/webm'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `benchmark_reel_${Date.now()}.webm`;
+    a.click();
+    document.getElementById('statusNote').textContent =
+      'Export complete — WebM downloaded. Convert to mp4 with: ffmpeg -i reel.webm -c:v libx264 -pix_fmt yuv420p reel.mp4';
+  };
+
+  recording = true;
+  playing = true;
+  loopMode = false;
+  animStart = null;
+  document.getElementById('recBadge').classList.add('show');
+  document.getElementById('recordBtn').classList.add('active');
+  document.getElementById('recordBtn').disabled = true;
+  document.getElementById('playBtn').disabled = true;
+  document.getElementById('statusNote').textContent = 'Recording… this will finish automatically at the end of the reel.';
+
+  mediaRecorder.start();
+  requestAnimationFrame(frame);
+});
+
+function finishRecording(){
+  recording = false;
+  if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
+  document.getElementById('recBadge').classList.remove('show');
+  document.getElementById('recordBtn').classList.remove('active');
+  document.getElementById('recordBtn').disabled = false;
+  document.getElementById('playBtn').disabled = false;
+}
+
+['paceSel','titleInput','subInput','leaderboardChk'].forEach(id => {
+  document.getElementById(id).addEventListener('input', buildTimeline);
+  document.getElementById(id).addEventListener('change', buildTimeline);
+});
+
+drawBackground(0);
+plainText('Load a report to begin', W/2, H/2, 34, 600, '#48505e', 1, 'Inter', 'center');
+renderReportList();
+</script>
+</body>
+</html>

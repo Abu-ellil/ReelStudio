@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Reel Studio</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800;900&family=Cairo:wght@400;600;700;800&display=swap');
+
+  :root{
+    --bg:#0a0e14; --panel:#11161f; --panel2:#0d1219; --border:#1e2530;
+    --fg:#e8edf4; --dim:#6b7789; --dim2:#48505e;
+    --cyan:#3fd0ff; --amber:#ffb454; --green:#5fe38a; --red:#ff6b6b; --purple:#b794f6;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--bg); color:var(--fg);
+    font-family:'Inter',sans-serif; padding:24px; min-height:100vh;
+  }
+  .mono{font-family:'IBM Plex Mono',monospace;}
+  h1{font-size:18px;font-weight:800;margin:0 0 2px 0;}
+  .sub{color:var(--dim);font-size:12.5px;font-family:'IBM Plex Mono',monospace;margin-bottom:20px;}
+
+  .layout{display:grid;grid-template-columns:340px 1fr 320px;gap:16px;align-items:start;}
+  @media (max-width:1300px){.layout{grid-template-columns:320px 1fr;}}
+  @media (max-width:1000px){.layout{grid-template-columns:1fr;}}
+
+  .panel{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:16px;}
+  .panel + .panel{margin-top:12px;}
+  .panel-title{font-size:11px;color:var(--dim);font-weight:700;letter-spacing:0.6px;text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:6px;}
+
+  textarea{
+    width:100%;background:#0c1119;border:1px solid var(--border);color:var(--fg);
+    border-radius:7px;padding:8px 10px;font-family:'IBM Plex Mono',monospace;font-size:11.5px;resize:vertical;
+  }
+  input[type=file]{font-size:11px;color:var(--dim);width:100%;margin-top:8px;}
+  select,input[type=text]{
+    background:#0c1119;border:1px solid var(--border);color:var(--fg);padding:7px 9px;border-radius:7px;
+    font-family:'IBM Plex Mono',monospace;font-size:12px;width:100%;
+  }
+  label{font-size:10.5px;color:var(--dim);font-weight:600;letter-spacing:0.4px;text-transform:uppercase;display:block;margin:10px 0 5px;}
+
+  button{
+    font-family:'Inter',sans-serif;font-weight:700;font-size:12.5px;border:none;border-radius:7px;
+    padding:9px 14px;cursor:pointer;transition:opacity .15s ease, transform .1s ease;width:100%;margin-top:8px;
+  }
+  button:active{transform:scale(0.98);}
+  button:disabled{opacity:0.35;cursor:not-allowed;}
+  .btn-primary{background:var(--cyan);color:#04121a;}
+  .btn-primary:hover:not(:disabled){opacity:0.88;}
+  .btn-magic{background:var(--purple);color:#1a0a2e;}
+  .btn-magic:hover:not(:disabled){opacity:0.88;}
+  .btn-magic.loading{background:var(--dim2);cursor:wait;}
+  .btn-record{background:var(--red);color:#fff;}
+  .btn-record:hover:not(:disabled){opacity:0.88;}
+  .btn-record.active{animation:recpulse 1s infinite;}
+  .btn-ghost{background:transparent;border:1px solid var(--border);color:var(--fg);}
+  .btn-ghost:hover:not(:disabled){border-color:var(--cyan);color:var(--cyan);}
+  .btn-small{width:auto;padding:5px 9px;font-size:11px;margin:0;}
+  .btn-tiny{width:auto;padding:3px 7px;font-size:10px;margin:0;border-radius:5px;}
+
+  .status-dot{width:8px;height:8px;border-radius:50%;display:inline-block;}
+  .status-dot.ok{background:var(--green);box-shadow:0 0 6px var(--green);}
+  .status-dot.bad{background:var(--red);}
+  .status-dot.unk{background:var(--dim2);}
+
+  .scene-editor-list{display:flex;flex-direction:column;gap:8px;margin-top:8px;max-height:560px;overflow-y:auto;padding-right:4px;}
+  .scene-card{
+    background:var(--panel2);border:1px solid var(--border);border-radius:8px;padding:10px;
+    position:relative;transition:border-color .15s ease;
+  }
+  .scene-card.selected{border-color:var(--cyan);}
+  .scene-card-head{display:flex;align-items:center;gap:6px;margin-bottom:6px;}
+  .scene-type-badge{
+    font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;
+    padding:2px 7px;border-radius:4px;font-family:'IBM Plex Mono',monospace;
+  }
+  .scene-type-intro{background:rgba(63,208,255,0.15);color:var(--cyan);}
+  .scene-type-title{background:rgba(255,180,84,0.15);color:var(--amber);}
+  .scene-type-bullet{background:rgba(95,227,138,0.15);color:var(--green);}
+  .scene-type-stat{background:rgba(183,148,246,0.15);color:var(--purple);}
+  .scene-type-comparison{background:rgba(255,107,107,0.15);color:var(--red);}
+  .scene-type-quote{background:rgba(255,255,255,0.08);color:#cdd5e0;}
+  .scene-type-outro{background:rgba(63,208,255,0.15);color:var(--cyan);}
+  .scene-card-body{display:flex;flex-direction:column;gap:4px;}
+  .scene-card-body textarea{min-height:30px;font-size:11px;padding:5px 7px;}
+  .scene-card-controls{display:flex;gap:4px;margin-top:6px;}
+  .scene-card-controls button{margin:0;}
+
+  .stage-wrap{background:#000;border:1px solid var(--border);border-radius:10px;overflow:hidden;position:relative;}
+  #stage{width:100%;display:block;background:#000;}
+  .rec-badge{
+    position:absolute;top:14px;right:14px;background:rgba(255,107,107,0.15);color:var(--red);
+    font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;padding:4px 10px;border-radius:5px;
+    display:none;align-items:center;gap:6px;
+  }
+  .rec-badge.show{display:flex;}
+  .rec-dot{width:7px;height:7px;border-radius:50%;background:var(--red);animation:recpulse 1s infinite;}
+
+  .transport{display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap;}
+  .transport button{width:auto;margin:0;}
+  .progress-track{flex:1;height:5px;background:#1a212c;border-radius:3px;overflow:hidden;min-width:120px;}
+  .progress-fill{height:100%;background:var(--cyan);width:0%;transition:width .1s linear;}
+  .scene-label{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--dim);min-width:150px;}
+
+  .row{display:flex;gap:8px;}
+  .row > *{flex:1;}
+  .note{font-size:11px;color:var(--dim2);line-height:1.6;margin-top:10px;font-family:'IBM Plex Mono',monospace;}
+  .err{color:var(--red);font-size:11px;margin-top:8px;font-family:'IBM Plex Mono',monospace;display:none;}
+  .err.show{display:block;}
+
+  @keyframes recpulse{0%,100%{opacity:1;}50%{opacity:0.6;}}
+
+  ::-webkit-scrollbar{width:6px;}
+  ::-webkit-scrollbar-track{background:transparent;}
+  ::-webkit-scrollbar-thumb{background:#2a3441;border-radius:3px;}
+  ::-webkit-scrollbar-thumb:hover{background:#3a4451;}
+</style>
+</head>
+<body>
+
+<h1>AI REEL STUDIO</h1>
+<div class="sub">نص → LM Studio → مشاهد متحركة → فيديو</div>
+
+<div class="layout">
+  <!-- LEFT: input + settings -->
+  <div>
+    <div class="panel">
+      <div class="panel-title">LM Studio Connection</div>
+      <label>Base URL</label>
+      <input type="text" id="baseUrl" value="http://localhost:1234/v1">
+      <div class="row" style="margin-top:8px;">
+        <div style="flex:2;">
+          <label>Model</label>
+          <select id="modelSel"><option value="">—</option></select>
+        </div>
+        <div style="flex:1;">
+          <label>Status</label>
+          <div style="padding:7px 0;font-size:12px;display:flex;align-items:center;gap:6px;">
+            <span class="status-dot unk" id="lmStatus"></span><span id="lmStatusText" style="font-family:'IBM Plex Mono';">unknown</span>
+          </div>
+        </div>
+      </div>
+      <button class="btn-ghost" id="checkLmBtn">⟳ Check connection & load models</button>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Your Script / Text</div>
+      <textarea id="scriptInput" rows="6" placeholder="اكتب النص هنا... أو الصق سكريبت، مقال، أرقام، أو أي محتوى تريد تحويله لفيديو.&#10;&#10;مثال:&#10;5 أسباب لتعلم البرمجة&#10;1- الطلب العالي على المبرمجين في سوق العمل&#10;2- راتب مرتفع مقارنة بمجالات أخرى&#10;..."></textarea>
+      <button class="btn-magic" id="generateBtn">✨ Generate Scenes with AI</button>
+      <div class="err" id="genError"></div>
+      <div class="note" id="genStatus" style="display:none;"></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Reel Settings</div>
+      <label>Pace</label>
+      <select id="paceSel">
+        <option value="0.7">Fast — punchy</option>
+        <option value="1" selected>Normal</option>
+        <option value="1.35">Cinematic — slow</option>
+      </select>
+      <div class="row">
+        <div>
+          <label>Language / Direction</label>
+          <select id="langSel">
+            <option value="ltr" selected>English (LTR)</option>
+            <option value="rtl">عربي (RTL)</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CENTER: stage -->
+  <div>
+    <div class="stage-wrap">
+      <canvas id="stage" width="1920" height="1080"></canvas>
+      <div class="rec-badge" id="recBadge"><div class="rec-dot"></div>REC</div>
+    </div>
+    <div class="transport">
+      <button class="btn-primary" id="playBtn">▶ Play</button>
+      <button class="btn-ghost" id="stopBtn" disabled>■ Stop</button>
+      <button class="btn-record" id="recordBtn">⏺ Export WebM</button>
+      <div class="scene-label" id="sceneLabel">no scenes yet</div>
+      <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+    </div>
+    <div class="note" id="statusNote">
+      اكتب نص واضغط Generate، أو عدّل المشاهد يدوياً من اليمين، ثم Play للمعاينة أو Export للفيديو.
+    </div>
+  </div>
+
+  <!-- RIGHT: scene editor -->
+  <div>
+    <div class="panel">
+      <div class="panel-title">
+        Scenes Editor
+        <span id="sceneCount" style="margin-left:auto;color:var(--dim2);">0</span>
+      </div>
+      <button class="btn-ghost btn-small" id="addSceneBtn" style="margin-bottom:8px;">+ Add scene manually</button>
+      <div class="scene-editor-list" id="sceneEditorList"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================ canvas setup
+const canvas = document.getElementById('stage');
+const ctx = canvas.getContext('2d');
+const W = canvas.width, H = canvas.height;
+
+// ============================================================ state
+let scenes = [];       // array of {type, fields, dur}
+let playing = false, recording = false, animStart = null, loopMode = true;
+let mediaRecorder = null, recordedChunks = [];
+let selectedSceneIdx = null;
+
+const DEFAULT_DURATIONS = {
+  intro:3.2, title:2.2, bullet:4.5, stat:3.0, comparison:4.5, quote:3.0, outro:3.2,
+};
+
+// ============================================================ LM Studio API
+async function lmFetch(path, opts={}){
+  const base = document.getElementById('baseUrl').value.trim().replace(/\/+$/,'');
+  const res = await fetch(base + path, opts);
+  if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
+  return res;
+}
+
+async function checkLmStudio(){
+  const dot = document.getElementById('lmStatus');
+  const txt = document.getElementById('lmStatusText');
+  const sel = document.getElementById('modelSel');
+  dot.className = 'status-dot unk';
+  txt.textContent = 'checking...';
+  try {
+    const res = await lmFetch('/models');
+    const data = await res.json();
+    const models = (data.data || []).map(m => m.id);
+    sel.innerHTML = models.length
+      ? models.map(m=>`<option value="${m}">${m}</option>`).join('')
+      : '<option value="">no models loaded</option>';
+    dot.className = 'status-dot ok';
+    txt.textContent = models.length ? `${models.length} model(s)` : 'connected';
+    return models;
+  } catch(e){
+    dot.className = 'status-dot bad';
+    txt.textContent = 'offline';
+    sel.innerHTML = '<option value="">—</option>';
+    return null;
+  }
+}
+
+const SCENE_SCHEMA_DESC = `You are a video scene planner. Break the user's text into a sequence of animated scenes for a short-form video reel.
+Output ONLY a JSON object: {"lang":"ltr" or "rtl", "scenes":[...]}.
+Do NOT wrap in markdown fences. Do NOT add commentary.
+
+Scene types and their fields:
+- {"type":"intro","fields":{"title":"main title","subtitle":"optional subtitle"}}
+- {"type":"title","fields":{"label":"small label above","title":"big title"}}
+- {"type":"bullet","fields":{"title":"section title","items":["point 1","point 2","point 3"]}}
+- {"type":"stat","fields":{"label":"what the stat is","value":"the number","unit":"optional unit"}}
+- {"type":"comparison","fields":{"title":"comparison title","left_label":"A","left_value":"val","right_label":"B","right_value":"val"}}
+- {"type":"quote","fields":{"text":"the quote","author":"optional source"}}
+- {"type":"outro","fields":{"title":"closing message","subtitle":"optional CTA"}}
+
+Rules:
+- Use "ltr" for English/Latin text, "rtl" for Arabic/Hebrew.
+- Keep text concise (fits on screen). Break long text into multiple scenes.
+- Start with intro, end with outro.
+- Pick scene types that fit the content naturally.
+- Detect the text's language and set "lang" accordingly.`;
+
+async function generateScenes(){
+  const btn = document.getElementById('generateBtn');
+  const errEl = document.getElementById('genError');
+  const statusEl = document.getElementById('genStatus');
+  errEl.classList.remove('show');
+  statusEl.style.display = 'block';
+  statusEl.textContent = 'Generating...';
+
+  const script = document.getElementById('scriptInput').value.trim();
+  if (!script){ errEl.textContent = 'Write some text first.'; errEl.classList.add('show'); statusEl.style.display='none'; return; }
+
+  const model = document.getElementById('modelSel').value;
+  if (!model){ errEl.textContent = 'No model loaded in LM Studio. Check connection.'; errEl.classList.add('show'); statusEl.style.display='none'; return; }
+
+  btn.disabled = true; btn.classList.add('loading'); btn.textContent = '⏳ Working...';
+  try {
+    const res = await lmFetch('/chat/completions', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        model,
+        messages:[
+          {role:'system', content: SCENE_SCHEMA_DESC},
+          {role:'user', content: script},
+        ],
+        temperature: 0.4,
+      }),
+    });
+    const data = await res.json();
+    let raw = data.choices?.[0]?.message?.content || '';
+    // strip markdown fences if present
+    raw = raw.replace(/```json\s*/gi,'').replace(/```\s*/g,'').trim();
+    const parsed = JSON.parse(raw);
+
+    if (!parsed.scenes || !Array.isArray(parsed.scenes)) throw new Error('Invalid response: no scenes array.');
+
+    scenes = parsed.scenes.map(s => ({
+      type: s.type,
+      fields: s.fields || {},
+      dur: DEFAULT_DURATIONS[s.type] || 3.0,
+    }));
+
+    if (parsed.lang){
+      document.getElementById('langSel').value = parsed.lang;
+    }
+
+    renderSceneEditor();
+    buildTimeline();
+    statusEl.textContent = `✓ Generated ${scenes.length} scenes. Review & edit on the right.`;
+  } catch(e){
+    errEl.textContent = 'Error: ' + e.message;
+    errEl.classList.add('show');
+    statusEl.style.display = 'none';
+  } finally {
+    btn.disabled = false; btn.classList.remove('loading'); btn.textContent = '✨ Generate Scenes with AI';
+  }
+}
+
+// ============================================================ scene editor UI
+function renderSceneEditor(){
+  const list = document.getElementById('sceneEditorList');
+  document.getElementById('sceneCount').textContent = scenes.length;
+  if (!scenes.length){
+    list.innerHTML = '<div style="color:var(--dim2);font-size:11.5px;font-style:italic;padding:6px 0;">No scenes. Generate with AI or add manually.</div>';
+    return;
+  }
+  list.innerHTML = '';
+  scenes.forEach((sc, i) => {
+    const card = document.createElement('div');
+    card.className = 'scene-card' + (selectedSceneIdx===i ? ' selected' : '');
+    card.dataset.idx = i;
+
+    const fieldsHtml = Object.entries(sc.fields).map(([k,v]) => {
+      const isList = Array.isArray(v);
+      const val = isList ? v.join('\n') : String(v);
+      return `<div data-field="${k}">
+        <label style="margin:4px 0 2px;font-size:9.5px;color:var(--dim2);">${k}${isList?' (one per line)':''}</label>
+        <textarea rows="${isList?Math.min(5,val.split('\n').length):1}" data-k="${k}">${escHtml(val)}</textarea>
+      </div>`;
+    }).join('');
+
+    card.innerHTML = `
+      <div class="scene-card-head">
+        <span class="scene-type-badge scene-type-${sc.type}">${sc.type}</span>
+        <label style="margin:0;font-size:9.5px;">dur</label>
+        <input type="text" data-dur="${i}" value="${sc.dur}" style="width:50px;padding:3px 6px;font-size:11px;">
+        <div class="scene-card-controls" style="margin:0 0 0 auto;">
+          <button class="btn-ghost btn-tiny" data-act="up">↑</button>
+          <button class="btn-ghost btn-tiny" data-act="down">↓</button>
+          <button class="btn-ghost btn-tiny" data-act="dup">⎘</button>
+          <button class="btn-ghost btn-tiny" data-act="del" style="color:var(--red);">✕</button>
+        </div>
+      </div>
+      <div class="scene-card-body">${fieldsHtml}</div>
+    `;
+
+    // field edits
+    card.querySelectorAll('textarea[data-k]').forEach(ta => {
+      ta.addEventListener('input', () => {
+        const k = ta.dataset.k;
+        const cur = scenes[i].fields[k];
+        if (Array.isArray(cur)){
+          scenes[i].fields[k] = ta.value.split('\n').filter(s=>s.trim()!=='');
+        } else {
+          scenes[i].fields[k] = ta.value;
+        }
+        buildTimeline();
+      });
+    });
+    // dur edit
+    card.querySelector('input[data-dur]').addEventListener('input', (e) => {
+      const v = parseFloat(e.target.value);
+      if (!isNaN(v) && v > 0){ scenes[i].dur = v; buildTimeline(); }
+    });
+    // control buttons
+    card.querySelectorAll('button[data-act]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const act = btn.dataset.act;
+        if (act==='up' && i>0){ [scenes[i],scenes[i-1]]=[scenes[i-1],scenes[i]]; }
+        else if (act==='down' && i<scenes.length-1){ [scenes[i],scenes[i+1]]=[scenes[i+1],scenes[i]]; }
+        else if (act==='dup'){ scenes.splice(i+1,0,JSON.parse(JSON.stringify(scenes[i]))); }
+        else if (act==='del'){ scenes.splice(i,1); if(selectedSceneIdx===i) selectedSceneIdx=null; }
+        renderSceneEditor();
+        buildTimeline();
+      });
+    });
+    card.addEventListener('click', () => {
+      selectedSceneIdx = i;
+      document.querySelectorAll('.scene-card').forEach(c=>c.classList.remove('selected'));
+      card.classList.add('selected');
+    });
+
+    list.appendChild(card);
+  });
+}
+
+function escHtml(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// ============================================================ background fx
+const particles = Array.from({length:60}, () => ({
+  x: Math.random()*W, y: Math.random()*H,
+  r: 1+Math.random()*2.2, speed: 8+Math.random()*22,
+  phase: Math.random()*Math.PI*2,
+}));
+
+function drawBackground(t){
+  ctx.fillStyle = '#070a0f';
+  ctx.fillRect(0,0,W,H);
+  const g = ctx.createRadialGradient(W*0.25,H*0.15,0, W*0.25,H*0.15, W*0.7);
+  g.addColorStop(0,'rgba(63,208,255,0.10)');
+  g.addColorStop(1,'rgba(63,208,255,0)');
+  ctx.fillStyle = g; ctx.fillRect(0,0,W,H);
+
+  ctx.strokeStyle = 'rgba(63,208,255,0.07)';
+  ctx.lineWidth = 1;
+  const spacing = 90;
+  const offset = (t*30) % spacing;
+  for (let y=-spacing; y<H+spacing; y+=spacing){
+    const yy = y+offset; ctx.beginPath(); ctx.moveTo(0,yy); ctx.lineTo(W,yy); ctx.stroke();
+  }
+  for (let x=0; x<W; x+=160){ ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
+
+  particles.forEach(p => {
+    const y = ((p.y - t*p.speed) % (H+40) + (H+40)) % (H+40) - 20;
+    const twinkle = 0.3 + 0.7*Math.abs(Math.sin(t*1.2 + p.phase));
+    ctx.beginPath(); ctx.arc(p.x,y,p.r,0,Math.PI*2);
+    ctx.fillStyle = `rgba(63,208,255,${0.25*twinkle})`; ctx.fill();
+  });
+
+  const scanY = (t*140) % H;
+  const sg = ctx.createLinearGradient(0,scanY-2,0,scanY+2);
+  sg.addColorStop(0,'rgba(95,227,138,0)');
+  sg.addColorStop(0.5,'rgba(95,227,138,0.10)');
+  sg.addColorStop(1,'rgba(95,227,138,0)');
+  ctx.fillStyle = sg; ctx.fillRect(0,scanY-2,W,4);
+
+  const vg = ctx.createRadialGradient(W/2,H/2,H*0.35, W/2,H/2,H*0.85);
+  vg.addColorStop(0,'rgba(0,0,0,0)');
+  vg.addColorStop(1,'rgba(0,0,0,0.55)');
+  ctx.fillStyle = vg; ctx.fillRect(0,0,W,H);
+}
+
+// ============================================================ draw helpers
+function easeOutCubic(x){ return 1 - Math.pow(1-x, 3); }
+function easeOutBack(x){ const c1=1.70158, c3=c1+1; return 1+c3*Math.pow(x-1,3)+c1*Math.pow(x-1,2); }
+
+function fadeWindow(p, inFrac=0.18, outFrac=0.18){
+  if (p < inFrac) return easeOutCubic(p/inFrac);
+  if (p > 1-outFrac) return 1-easeOutCubic((p-(1-outFrac))/outFrac);
+  return 1;
+}
+function glowText(text,x,y,size,weight,color,opacity,glow=22,font='Inter',align='left'){
+  ctx.save(); ctx.globalAlpha=opacity;
+  ctx.font=`${weight} ${size}px "${font}"`;
+  ctx.textAlign=align; ctx.textBaseline='alphabetic';
+  ctx.shadowColor=color; ctx.shadowBlur=glow; ctx.fillStyle=color;
+  ctx.fillText(text,x,y); ctx.restore();
+}
+function plainText(text,x,y,size,weight,color,opacity,font='Inter',align='left'){
+  ctx.save(); ctx.globalAlpha=opacity;
+  ctx.font=`${weight} ${size}px "${font}"`;
+  ctx.textAlign=align; ctx.textBaseline='alphabetic';
+  ctx.fillStyle=color; ctx.fillText(text,x,y); ctx.restore();
+}
+function wrapText(text,maxWidth,font,size,weight){
+  ctx.save(); ctx.font=`${weight} ${size}px "${font}"`; 
+  const words = text.split(' ');
+  const lines = [];
+  let cur = '';
+  for (const w of words){
+    const test = cur ? cur+' '+w : w;
+    if (ctx.measureText(test).width > maxWidth && cur){ lines.push(cur); cur=w; }
+    else cur = test;
+  }
+  if (cur) lines.push(cur);
+  ctx.restore();
+  return lines;
+}
+function roundRect(ctx,x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);
+  ctx.arcTo(x+w,y,x+w,y+h,r);
+  ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r);
+  ctx.arcTo(x,y,x+w,y,r);
+  ctx.closePath();
+}
+function isRTL(){ return document.getElementById('langSel').value === 'rtl'; }
+function fontFor(){ return isRTL() ? 'Cairo' : 'Inter'; }
+function fontMono(){ return 'IBM Plex Mono'; }
+function textAlignBase(){ return isRTL() ? 'right' : 'left'; }
+
+// ============================================================ scene renderers
+function sceneIntro(p, f){
+  const op = fadeWindow(p,0.25,0.2);
+  const rise = (1-easeOutCubic(Math.min(1,p/0.3)))*40;
+  const dir = isRTL() ? 'right' : 'center';
+  const fp = fontFor();
+  glowText(f.title||'', W/2, H/2-20+rise, 96, 900, '#e8edf4', op, 30, fp, 'center');
+  if (f.subtitle) plainText(f.subtitle, W/2, H/2+50+rise, 30, 500, '#3fd0ff', op*0.95, fontMono(), 'center');
+  ctx.save(); ctx.globalAlpha=op; ctx.strokeStyle='#3fd0ff'; ctx.lineWidth=2;
+  const lw = 220*easeOutCubic(Math.min(1,p/0.35));
+  ctx.beginPath(); ctx.moveTo(W/2-lw/2,H/2+80); ctx.lineTo(W/2+lw/2,H/2+80); ctx.stroke();
+  ctx.restore();
+}
+
+function sceneTitle(p, f){
+  const op = fadeWindow(p);
+  const fp = fontFor();
+  const align = 'center';
+  if (f.label) plainText((f.label||'').toUpperCase(), W/2, H/2-100, 24, 700, '#6b7789', op, fontMono(), align);
+  glowText(f.title||'', W/2, H/2+10, 80, 800, '#e8edf4', op, 26, fp, align);
+}
+
+function sceneBullet(p, f){
+  const op = fadeWindow(p);
+  const fp = fontFor();
+  const items = Array.isArray(f.items) ? f.items : [];
+  plainText(f.title||'', W/2, 180, 38, 800, '#e8edf4', op, fp, 'center');
+  const startY = 320;
+  const gap = Math.min(110, (H-startY-120)/Math.max(items.length,1));
+  items.forEach((item,i) => {
+    const stagger = Math.min(1, Math.max(0, (p-0.1-i*0.08)/0.35));
+    const localOp = op*easeOutCubic(stagger);
+    const slideX = (1-easeOutCubic(stagger)) * (isRTL()?80:-80);
+    const y = startY + i*gap;
+    // bullet number circle
+    ctx.save(); ctx.globalAlpha = localOp;
+    ctx.fillStyle = '#3fd0ff';
+    ctx.beginPath(); ctx.arc(isRTL()?W/2+540:W/2-540, y-8, 26, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#04121a'; ctx.font='800 26px "Inter"'; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(String(i+1), isRTL()?W/2+540:W/2-540, y-7);
+    ctx.restore();
+    // item text (wrap)
+    const lines = wrapText(item, 900, fp, 34, 600);
+    lines.forEach((ln,li) => {
+      plainText(ln, isRTL()?W/2+490:W/2-490, y+li*42-8, 34, 600, '#e8edf4', localOp, fp, textAlignBase());
+    });
+  });
+}
+
+function sceneStat(p, f){
+  const op = fadeWindow(p);
+  const countP = easeOutCubic(Math.min(1, p/0.5));
+  const fp = fontFor();
+  plainText((f.label||'').toUpperCase(), W/2, H/2-180, 26, 700, '#6b7789', op, fontMono(), 'center');
+
+  // animate value if numeric
+  let displayVal = f.value || '';
+  const numeric = parseFloat(String(f.value).replace(/[^0-9.\-]/g,''));
+  if (!isNaN(numeric) && String(f.value).match(/[\d.]/)){
+    displayVal = (numeric*countP).toFixed(String(f.value).includes('.')?1:0);
+  }
+  const valText = displayVal + (f.unit ? ' '+f.unit : '');
+  glowText(valText, W/2, H/2+40, 140, 800, '#3fd0ff', op, 40, fontMono(), 'center');
+}
+
+function sceneComparison(p, f){
+  const op = fadeWindow(p);
+  const fp = fontFor();
+  plainText(f.title||'', W/2, 160, 36, 800, '#e8edf4', op, fp, 'center');
+
+  const leftStagger = easeOutCubic(Math.min(1,p/0.4));
+  const rightStagger = easeOutCubic(Math.min(1,Math.max(0,(p-0.2)/0.4)));
+  const leftOp = op*leftStagger, rightOp = op*rightStagger;
+
+  // left card
+  drawCompCard(W/2-480, 280, 420, 580, f.left_label, f.left_value, '#3fd0ff', leftOp);
+  // right card
+  drawCompCard(W/2+60, 280, 420, 580, f.right_label, f.right_value, '#5fe38a', rightOp);
+  // VS
+  ctx.save(); ctx.globalAlpha = op;
+  ctx.font='900 56px "Inter"'; ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillStyle='#6b7789'; ctx.fillText('VS', W/2, 540);
+  ctx.restore();
+}
+
+function drawCompCard(x,y,w,h,label,value,color,opacity){
+  ctx.save(); ctx.globalAlpha = opacity;
+  roundRect(ctx,x,y,w,h,16); ctx.strokeStyle=color; ctx.lineWidth=2; ctx.stroke();
+  ctx.fillStyle='rgba(0,0,0,0.3)'; ctx.fill();
+  plainText(label||'', x+w/2, y+80, 26, 700, '#6b7789', 1, fontFor(), 'center');
+  const lines = wrapText(value||'', w-60, fontMono(), 52, 700);
+  lines.forEach((ln,i) => {
+    plainText(ln, x+w/2, y+h/2+i*60, 52, 700, color, 1, fontMono(), 'center');
+  });
+  ctx.restore();
+}
+
+function sceneQuote(p, f){
+  const op = fadeWindow(p,0.2,0.2);
+  const fp = fontFor();
+  ctx.save(); ctx.globalAlpha=op; ctx.strokeStyle='#3fd0ff'; ctx.lineWidth=4;
+  ctx.beginPath(); ctx.moveTo(W/2-500,H/2-120); ctx.lineTo(W/2-500,H/2+60); ctx.stroke();
+  ctx.restore();
+  const lines = wrapText(f.text||'', 900, fp, 44, 600);
+  lines.forEach((ln,i) => {
+    plainText(ln, W/2, H/2-60+i*56, 44, 600, '#e8edf4', op, fp, 'center');
+  });
+  if (f.author) plainText('— ' + f.author, W/2, H/2+lines.length*56-20, 28, 600, '#3fd0ff', op, fontMono(), 'center');
+}
+
+function sceneOutro(p, f){
+  const op = fadeWindow(p,0.2,0.3);
+  const fp = fontFor();
+  glowText(f.title||'', W/2, H/2-10, 56, 800, '#e8edf4', op, 24, fp, 'center');
+  if (f.subtitle) plainText(f.subtitle||'', W/2, H/2+55, 24, 500, '#3fd0ff', op*0.9, fontMono(), 'center');
+}
+
+// ============================================================ timeline + playback
+let timeline = [];
+
+function buildTimeline(){
+  const pace = parseFloat(document.getElementById('paceSel').value);
+  timeline = scenes.map(s => ({
+    type: s.type,
+    dur: s.dur * pace,
+    fields: s.fields,
+    label: `${s.type}`,
+  }));
+  const total = timeline.reduce((a,s)=>a+s.dur,0);
+  document.getElementById('sceneLabel').textContent =
+    timeline.length ? `${timeline.length} scenes · ${total.toFixed(1)}s` : 'no scenes yet';
+}
+
+function drawScene(type, p, fields){
+  if (type==='intro') sceneIntro(p,fields);
+  else if (type==='title') sceneTitle(p,fields);
+  else if (type==='bullet') sceneBullet(p,fields);
+  else if (type==='stat') sceneStat(p,fields);
+  else if (type==='comparison') sceneComparison(p,fields);
+  else if (type==='quote') sceneQuote(p,fields);
+  else if (type==='outro') sceneOutro(p,fields);
+}
+
+function totalDuration(){ return timeline.reduce((a,s)=>a+s.dur,0); }
+
+function frame(now){
+  if (!playing) return;
+  if (animStart===null) animStart = now;
+  let elapsed = (now-animStart)/1000;
+  const total = totalDuration();
+  if (elapsed >= total){
+    if (loopMode && !recording){ animStart = now; elapsed = 0; }
+    else { drawAtTime(total-0.001); stopPlayback(); if (recording) finishRecording(); return; }
+  }
+  drawAtTime(elapsed);
+  document.getElementById('progressFill').style.width = (elapsed/total*100)+'%';
+  requestAnimationFrame(frame);
+}
+
+function drawAtTime(elapsed){
+  drawBackground(elapsed);
+  if (!timeline.length){ plainText('Add scenes to begin', W/2, H/2, 34, 600, '#48505e', 1, 'Inter', 'center'); return; }
+  let acc = 0;
+  for (const scene of timeline){
+    if (elapsed < acc+scene.dur){
+      const p = (elapsed-acc)/scene.dur;
+      drawScene(scene.type, p, scene.fields);
+      document.getElementById('sceneLabel').textContent = scene.label;
+      break;
+    }
+    acc += scene.dur;
+  }
+}
+
+// ============================================================ transport
+async function ensureFontsReady(){
+  try {
+    await document.fonts.load('800 96px Inter');
+    await document.fonts.load('700 22px "IBM Plex Mono"');
+    await document.fonts.load('800 96px Cairo');
+    await document.fonts.ready;
+  } catch(e){}
+}
+
+document.getElementById('playBtn').addEventListener('click', async () => {
+  if (!timeline.length) buildTimeline();
+  if (!timeline.length){ alert('Add scenes first (generate or manually).'); return; }
+  await ensureFontsReady();
+  playing = true; loopMode = true; animStart = null;
+  document.getElementById('playBtn').disabled = true;
+  document.getElementById('stopBtn').disabled = false;
+  requestAnimationFrame(frame);
+});
+
+document.getElementById('stopBtn').addEventListener('click', stopPlayback);
+
+function stopPlayback(){
+  playing = false; animStart = null;
+  document.getElementById('playBtn').disabled = false;
+  document.getElementById('stopBtn').disabled = true;
+  document.getElementById('progressFill').style.width = '0%';
+}
+
+document.getElementById('recordBtn').addEventListener('click', async () => {
+  if (recording) return;
+  if (!timeline.length) buildTimeline();
+  if (!timeline.length){ alert('Add scenes first.'); return; }
+  await ensureFontsReady();
+
+  const stream = canvas.captureStream(30);
+  let mimeType = 'video/webm;codecs=vp9';
+  if (!MediaRecorder.isTypeSupported(mimeType)) mimeType = 'video/webm;codecs=vp8';
+  if (!MediaRecorder.isTypeSupported(mimeType)) mimeType = 'video/webm';
+
+  recordedChunks = [];
+  mediaRecorder = new MediaRecorder(stream, {mimeType, videoBitsPerSecond:12000000});
+  mediaRecorder.ondataavailable = (e) => { if (e.data.size>0) recordedChunks.push(e.data); };
+  mediaRecorder.onstop = () => {
+    const blob = new Blob(recordedChunks, {type:'video/webm'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `ai_reel_${Date.now()}.webm`; a.click();
+    document.getElementById('statusNote').textContent =
+      '✓ Export complete — WebM downloaded. Convert to mp4: ffmpeg -i reel.webm -c:v libx264 -pix_fmt yuv420p reel.mp4';
+  };
+
+  recording = true; playing = true; loopMode = false; animStart = null;
+  document.getElementById('recBadge').classList.add('show');
+  document.getElementById('recordBtn').classList.add('active');
+  document.getElementById('recordBtn').disabled = true;
+  document.getElementById('playBtn').disabled = true;
+  document.getElementById('statusNote').textContent = 'Recording… will finish automatically at end of reel.';
+
+  // draw first frame before recording to avoid black frames
+  drawAtTime(0);
+  mediaRecorder.start();
+  requestAnimationFrame(frame);
+});
+
+function finishRecording(){
+  recording = false;
+  if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
+  document.getElementById('recBadge').classList.remove('show');
+  document.getElementById('recordBtn').classList.remove('active');
+  document.getElementById('recordBtn').disabled = false;
+  document.getElementById('playBtn').disabled = false;
+}
+
+// ============================================================ wiring
+document.getElementById('checkLmBtn').addEventListener('click', checkLmStudio);
+document.getElementById('generateBtn').addEventListener('click', generateScenes);
+document.getElementById('addSceneBtn').addEventListener('click', () => {
+  scenes.push({type:'title', fields:{label:'NEW', title:'Edit me'}, dur: DEFAULT_DURATIONS.title});
+  renderSceneEditor(); buildTimeline();
+});
+['paceSel','langSel'].forEach(id => {
+  document.getElementById(id).addEventListener('input', () => { buildTimeline(); drawAtTime(0); });
+  document.getElementById(id).addEventListener('change', () => { buildTimeline(); drawAtTime(0); });
+});
+
+// ============================================================ init
+drawBackground(0);
+plainText('AI Reel Studio — ready', W/2, H/2, 34, 600, '#48505e', 1, 'Inter', 'center');
+plainText('Connect LM Studio → write text → Generate', W/2, H/2+50, 22, 500, '#48505e', 0.8, 'IBM Plex Mono', 'center');
+renderSceneEditor();
+checkLmStudio();
+</script>
+</body>
+</html>
