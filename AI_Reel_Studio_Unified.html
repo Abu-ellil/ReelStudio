@@ -1133,7 +1133,8 @@ function renderSceneThumb(sc){
   const tw = 96, th = Math.round(tw * H / W);
   const off = document.createElement('canvas'); off.width = tw; off.height = th;
   const octx = off.getContext('2d');
-  octx.fillStyle = '#0c1119'; octx.fillRect(0,0,tw,th);
+  // إن كان للمشهد لون سوليد (chroma)، اعرضه نقيًا ليعكس البطاقة الحالة
+  octx.fillStyle = sc.bgColor || '#0c1119'; octx.fillRect(0,0,tw,th);
   const rgb = hexToRgb(THEME.primary);
   octx.fillStyle = `rgba(${rgb.r},${rgb.g},${rgb.b},0.18)`;
   octx.fillRect(0,0,tw,th*0.5);
@@ -1178,6 +1179,10 @@ function renderSceneEditor(){
     const bgEntry = sceneBgMedia[sc.id];
     const bgLabel = bgEntry && bgEntry.ready ? `✓ ${bgEntry.type} set` : 'no override — uses global background';
 
+    // حالة لون السوليد لكل مشهد (chroma)
+    const scBgColor = sc.bgColor || '';
+    const scBgColorLabel = scBgColor ? `✓ ${scBgColor.toUpperCase()}` : 'off — uses global';
+
     card.innerHTML = `
       <div class="scene-card-head">
         <img src="${renderSceneThumb(sc)}" style="width:34px;height:60px;object-fit:cover;border-radius:4px;border:1px solid var(--border);">
@@ -1202,6 +1207,16 @@ function renderSceneEditor(){
             <button class="btn-ghost btn-tiny" data-act="clearbg">✕ clear override</button>
             <span style="font-size:9.5px;color:var(--dim2);align-self:center;">${escHtml(bgLabel)}</span>
           </div>
+        </div>
+        <div style="margin-top:6px;">
+          <label style="margin:0 0 2px;font-size:9.5px;color:var(--dim2);">scene solid color (chroma key)</label>
+          <div class="btn-row-tight" style="align-items:center;gap:6px;">
+            <input type="color" data-scene-bgcolor="${escAttr(sc.id)}" value="${escAttr(scBgColor || '#00ff00')}" style="width:30px;height:24px;padding:0;border:1px solid var(--border);background:none;cursor:pointer;">
+            <button class="btn-ghost btn-tiny" data-act="setbgc">on</button>
+            <button class="btn-ghost btn-tiny" data-act="clearbgc">off</button>
+            <span class="scene-bgcolor-status" style="font-size:9.5px;color:var(--dim2);align-self:center;">${escHtml(scBgColorLabel)}</span>
+          </div>
+          <div class="tpl-row scene-chroma-swatches" style="margin-top:4px;"></div>
         </div>
       </div>
     `;
@@ -1261,12 +1276,50 @@ function renderSceneEditor(){
         img.src = url;
       }
     });
+    // per-scene solid color (chroma) — منتقي اللون
+    const scColorInput = card.querySelector(`input[data-scene-bgcolor="${CSS.escape(sc.id)}"]`);
+    scColorInput.addEventListener('input', () => {
+      // تحديث فوري فقط إذا كان اللون مُفعّلاً لهذا المشهد
+      if (scenes[i].bgColor){ scenes[i].bgColor = scColorInput.value; buildTimeline(); drawAtTime(0); }
+    });
+    scColorInput.addEventListener('change', () => {
+      // سجلّ تراجع عند التأكيد
+      pushHistory();
+      scheduleProjectSave();
+    });
+    // سواتشز الكروما لكل مشهد
+    const scSwatchRow = card.querySelector('.scene-chroma-swatches');
+    CHROMA_SWATCHES.forEach(sw => {
+      const sb = document.createElement('button');
+      sb.className = 'tpl-swatch';
+      sb.style.background = sw.hex; sb.style.width = '24px'; sb.style.height = '24px';
+      sb.title = sw.name;
+      sb.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        pushHistory();
+        scenes[i].bgColor = sw.hex;
+        renderSceneEditor(); buildTimeline(); scheduleProjectSave(); drawAtTime(0);
+      });
+      scSwatchRow.appendChild(sb);
+    });
     // control buttons
     card.querySelectorAll('button[data-act]').forEach(btn => {
       btn.addEventListener('click', (ev) => {
         ev.stopPropagation();
         const act = btn.dataset.act;
         if (act==='clearbg'){ delete sceneBgMedia[sc.id]; renderSceneEditor(); drawAtTime(0); return; }
+        if (act==='setbgc'){
+          pushHistory();
+          scenes[i].bgColor = scColorInput.value;
+          renderSceneEditor(); buildTimeline(); scheduleProjectSave(); drawAtTime(0);
+          return;
+        }
+        if (act==='clearbgc'){
+          pushHistory();
+          delete scenes[i].bgColor;
+          renderSceneEditor(); buildTimeline(); scheduleProjectSave(); drawAtTime(0);
+          return;
+        }
         pushHistory();
         if (act==='up' && i>0){ [scenes[i],scenes[i-1]]=[scenes[i-1],scenes[i]]; }
         else if (act==='down' && i<scenes.length-1){ [scenes[i],scenes[i+1]]=[scenes[i+1],scenes[i]]; }
@@ -2869,6 +2922,7 @@ document.getElementById('saveProjectBtn').addEventListener('click', () => {
     lang: document.getElementById('langSel').value,
     captions: document.getElementById('captionsChk').checked,
     theme: { primary: THEME.primary, accent: THEME.accent },
+    bgColor: globalBgColor || null,   // لون سوليد عام (chroma) — null = معطّل
   };
   const blob = new Blob([JSON.stringify(project, null, 2)], {type:'application/json'});
   downloadBlob(blob, `ai_reel_project_${Date.now()}.json`);
@@ -2894,6 +2948,10 @@ document.getElementById('loadProjectInput').addEventListener('change', (e) => {
         document.getElementById('brandPrimary').value = THEME.primary;
         document.getElementById('brandAccent').value = THEME.accent;
       }
+      // استعادة لون السوليد العام (chroma) إن وُجد
+      globalBgColor = (typeof project.bgColor === 'string' && project.bgColor) ? project.bgColor : null;
+      if (globalBgColor) document.getElementById('globalBgColor').value = globalBgColor;
+      updateGlobalBgColorStatus();
       renderSceneEditor(); renderReportList(); buildTimeline(); drawAtTime(0);
     } catch(err){
       alert('Could not load project file: ' + err.message);
@@ -3124,6 +3182,7 @@ function collectProjectData(){
   data._scenes = JSON.parse(JSON.stringify(scenes));
   data._reports = JSON.parse(JSON.stringify(reports));
   data._synthPreset = synthPreset;
+  data._globalBgColor = globalBgColor || null;   // لون سوليد عام (chroma)
   return data;
 }
 
@@ -3143,6 +3202,10 @@ function applyProjectData(data){
   reports = Array.isArray(data._reports) ? JSON.parse(JSON.stringify(data._reports)) : [];
   synthPreset = data._synthPreset ?? null;
   if (synthPreset) musicMode = 'synth';
+  // استعادة لون السوليد العام (chroma)
+  globalBgColor = (typeof data._globalBgColor === 'string' && data._globalBgColor) ? data._globalBgColor : null;
+  if (globalBgColor){ const gi = document.getElementById('globalBgColor'); if (gi) gi.value = globalBgColor; }
+  updateGlobalBgColorStatus();
   // derived UI
   THEME.primary = document.getElementById('brandPrimary').value || THEME.primary;
   THEME.accent = document.getElementById('brandAccent').value || THEME.accent;
