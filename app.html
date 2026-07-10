@@ -3138,6 +3138,8 @@ function applyI18n(lang){
     const key = el.dataset.i18nPh;
     if (dict[key] !== undefined) el.placeholder = dict[key];
   });
+  const fz = document.getElementById('fontZoomCtrl');
+  if (fz) fz.title = dict.editorFontLabel || fz.title;
   document.documentElement.lang = lang;
   document.documentElement.dir = (lang==='ar') ? 'rtl' : 'ltr';
   document.getElementById('uiLangEn').classList.toggle('active', lang==='en');
