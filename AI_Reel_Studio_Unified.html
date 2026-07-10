@@ -1,0 +1,2315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Reel Studio — Unified</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800;900&family=Cairo:wght@400;600;700;800&display=swap');
+
+  :root{
+    --bg:#0a0e14; --panel:#11161f; --panel2:#0d1219; --border:#1e2530;
+    --fg:#e8edf4; --dim:#6b7789; --dim2:#48505e;
+    --cyan:#3fd0ff; --amber:#ffb454; --green:#5fe38a; --red:#ff6b6b; --purple:#b794f6;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--bg); color:var(--fg);
+    font-family:'Inter',sans-serif; padding:24px; min-height:100vh;
+  }
+  .mono{font-family:'IBM Plex Mono',monospace;}
+  h1{font-size:18px;font-weight:800;margin:0 0 2px 0;}
+  .sub{color:var(--dim);font-size:12.5px;font-family:'IBM Plex Mono',monospace;margin-bottom:20px;}
+
+  .layout{display:grid;grid-template-columns:340px 1fr 320px;gap:16px;align-items:start;}
+  @media (max-width:1300px){.layout{grid-template-columns:320px 1fr;}}
+  @media (max-width:1000px){.layout{grid-template-columns:1fr;}}
+
+  .topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;gap:12px;flex-wrap:wrap;}
+  .lang-switch{display:flex;background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:3px;gap:2px;}
+  .lang-switch button{width:auto;margin:0;padding:6px 14px;font-size:12px;background:transparent;color:var(--dim);border-radius:6px;}
+  .lang-switch button.active{background:var(--cyan);color:#04121a;}
+
+  html[dir="rtl"] body, html[dir="rtl"] button, html[dir="rtl"] label,
+  html[dir="rtl"] select, html[dir="rtl"] .panel-title, html[dir="rtl"] .note,
+  html[dir="rtl"] h1, html[dir="rtl"] .sub, html[dir="rtl"] .batch-note,
+  html[dir="rtl"] .tab-nav button{ font-family:'Cairo',sans-serif; }
+
+  .tab-nav{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;}
+  .tab-nav button{width:auto;flex:1;margin:0;padding:9px 8px;font-size:11.5px;background:var(--panel);border:1px solid var(--border);color:var(--dim);border-radius:8px;}
+  .tab-nav button.active{background:rgba(63,208,255,0.12);border-color:var(--cyan);color:var(--cyan);}
+  .tab-pane{display:none;}
+  .tab-pane.active{display:block;}
+
+  .panel{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:16px;}
+  .panel + .panel{margin-top:12px;}
+  .panel-title{font-size:11px;color:var(--dim);font-weight:700;letter-spacing:0.6px;text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:6px;}
+
+  textarea{
+    width:100%;background:#0c1119;border:1px solid var(--border);color:var(--fg);
+    border-radius:7px;padding:8px 10px;font-family:'IBM Plex Mono',monospace;font-size:11.5px;resize:vertical;
+  }
+  input[type=file]{font-size:11px;color:var(--dim);width:100%;margin-top:8px;}
+  select,input[type=text]{
+    background:#0c1119;border:1px solid var(--border);color:var(--fg);padding:7px 9px;border-radius:7px;
+    font-family:'IBM Plex Mono',monospace;font-size:12px;width:100%;
+  }
+  label{font-size:10.5px;color:var(--dim);font-weight:600;letter-spacing:0.4px;text-transform:uppercase;display:block;margin:10px 0 5px;}
+
+  button{
+    font-family:'Inter',sans-serif;font-weight:700;font-size:12.5px;border:none;border-radius:7px;
+    padding:9px 14px;cursor:pointer;transition:opacity .15s ease, transform .1s ease;width:100%;margin-top:8px;
+  }
+  button:active{transform:scale(0.98);}
+  button:disabled{opacity:0.35;cursor:not-allowed;}
+  .btn-primary{background:var(--cyan);color:#04121a;}
+  .btn-primary:hover:not(:disabled){opacity:0.88;}
+  .btn-magic{background:var(--purple);color:#1a0a2e;}
+  .btn-magic:hover:not(:disabled){opacity:0.88;}
+  .btn-magic.loading{background:var(--dim2);cursor:wait;}
+  .btn-record{background:var(--red);color:#fff;}
+  .btn-record:hover:not(:disabled){opacity:0.88;}
+  .btn-record.active{animation:recpulse 1s infinite;}
+  .btn-ghost{background:transparent;border:1px solid var(--border);color:var(--fg);}
+  .btn-ghost:hover:not(:disabled){border-color:var(--cyan);color:var(--cyan);}
+  .btn-small{width:auto;padding:5px 9px;font-size:11px;margin:0;}
+  .btn-tiny{width:auto;padding:3px 7px;font-size:10px;margin:0;border-radius:5px;}
+
+  .status-dot{width:8px;height:8px;border-radius:50%;display:inline-block;}
+  .status-dot.ok{background:var(--green);box-shadow:0 0 6px var(--green);}
+  .status-dot.bad{background:var(--red);}
+  .status-dot.unk{background:var(--dim2);}
+
+  .scene-editor-list{display:flex;flex-direction:column;gap:8px;margin-top:8px;max-height:560px;overflow-y:auto;padding-right:4px;}
+  .scene-card{
+    background:var(--panel2);border:1px solid var(--border);border-radius:8px;padding:10px;
+    position:relative;transition:border-color .15s ease;
+  }
+  .scene-card.selected{border-color:var(--cyan);}
+  .scene-card-head{display:flex;align-items:center;gap:6px;margin-bottom:6px;}
+  .scene-type-badge{
+    font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;
+    padding:2px 7px;border-radius:4px;font-family:'IBM Plex Mono',monospace;
+  }
+  .scene-type-intro{background:rgba(63,208,255,0.15);color:var(--cyan);}
+  .scene-type-title{background:rgba(255,180,84,0.15);color:var(--amber);}
+  .scene-type-bullet{background:rgba(95,227,138,0.15);color:var(--green);}
+  .scene-type-stat{background:rgba(183,148,246,0.15);color:var(--purple);}
+  .scene-type-comparison{background:rgba(255,107,107,0.15);color:var(--red);}
+  .scene-type-quote{background:rgba(255,255,255,0.08);color:#cdd5e0;}
+  .scene-type-outro{background:rgba(63,208,255,0.15);color:var(--cyan);}
+  .scene-type-benchmark_model{background:rgba(255,180,84,0.15);color:var(--amber);}
+  .scene-type-benchmark_hero{background:rgba(95,227,138,0.15);color:var(--green);}
+  .scene-type-benchmark_secondary{background:rgba(183,148,246,0.15);color:var(--purple);}
+  .scene-type-benchmark_leaderboard{background:rgba(255,107,107,0.15);color:var(--red);}
+  .scene-card-body{display:flex;flex-direction:column;gap:4px;}
+  .scene-card-body textarea{min-height:30px;font-size:11px;padding:5px 7px;}
+  .scene-card-controls{display:flex;gap:4px;margin-top:6px;}
+  .scene-card-controls button{margin:0;}
+
+  .report-list{display:flex;flex-direction:column;gap:6px;margin-top:8px;}
+  .report-item{
+    display:flex;align-items:center;gap:8px;background:#0c1119;border:1px solid var(--border);
+    border-radius:7px;padding:8px 10px;font-size:12px;
+  }
+  .report-item .ri-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .report-item .ri-tps{color:var(--cyan);font-family:'IBM Plex Mono',monospace;font-size:11px;}
+  .report-item .ri-remove{background:transparent;border:none;color:var(--dim);cursor:pointer;width:auto;padding:2px 6px;margin:0;font-size:14px;}
+  .report-item .ri-remove:hover{color:var(--red);}
+
+  .stage-wrap{background:#000;border:1px solid var(--border);border-radius:10px;overflow:hidden;position:relative;max-height:76vh;width:fit-content;max-width:100%;margin:0 auto;}
+  #stage{display:block;background:#000;max-width:100%;max-height:76vh;width:auto;height:auto;}
+  .rec-badge{
+    position:absolute;top:14px;right:14px;background:rgba(255,107,107,0.15);color:var(--red);
+    font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;padding:4px 10px;border-radius:5px;
+    display:none;align-items:center;gap:6px;
+  }
+  .rec-badge.show{display:flex;}
+  .rec-dot{width:7px;height:7px;border-radius:50%;background:var(--red);animation:recpulse 1s infinite;}
+
+  .transport{display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap;}
+  .transport button{width:auto;margin:0;}
+  .progress-track{flex:1;height:5px;background:#1a212c;border-radius:3px;overflow:hidden;min-width:120px;}
+  .progress-fill{height:100%;background:var(--cyan);width:0%;transition:width .1s linear;}
+  .scene-label{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--dim);min-width:150px;}
+
+  .row{display:flex;gap:8px;}
+  .row > *{flex:1;}
+  .note{font-size:11px;color:var(--dim2);line-height:1.6;margin-top:10px;font-family:'IBM Plex Mono',monospace;}
+  .err{color:var(--red);font-size:11px;margin-top:8px;font-family:'IBM Plex Mono',monospace;display:none;}
+  .err.show{display:block;}
+
+  input[type=color]{-webkit-appearance:none;appearance:none;width:100%;height:34px;border:1px solid var(--border);border-radius:7px;background:#0c1119;padding:2px;cursor:pointer;}
+  input[type=color]::-webkit-color-swatch{border:none;border-radius:5px;}
+  input[type=range]{width:100%;accent-color:var(--cyan);margin-top:4px;}
+
+  .tpl-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px;}
+  .tpl-swatch{
+    width:auto;flex:1 1 30%;min-width:60px;margin:0;padding:6px 4px;font-size:9.5px;font-weight:700;
+    border-radius:6px;border:1px solid var(--border);color:#fff;text-shadow:0 1px 2px rgba(0,0,0,0.5);
+  }
+  .checkbox-row{display:flex;align-items:center;gap:7px;margin-top:10px;font-size:11px;color:var(--dim);}
+  .checkbox-row input{width:auto;margin:0;}
+
+  audio{width:100%;margin-top:6px;height:32px;}
+  .btn-row-tight{display:flex;gap:6px;margin-top:8px;}
+  .btn-row-tight button{margin:0;}
+
+  .batch-note{font-size:10.5px;color:var(--dim2);line-height:1.6;margin-bottom:8px;font-family:'IBM Plex Mono',monospace;}
+  .batch-log{max-height:200px;overflow-y:auto;font-size:11px;font-family:'IBM Plex Mono',monospace;color:var(--dim);margin-top:8px;line-height:1.7;}
+
+  .provider-row{display:flex;gap:6px;margin-top:4px;}
+  .provider-row button{flex:1;margin:0;padding:6px 4px;font-size:10px;}
+
+  @keyframes recpulse{0%,100%{opacity:1;}50%{opacity:0.6;}}
+
+  ::-webkit-scrollbar{width:6px;}
+  ::-webkit-scrollbar-track{background:transparent;}
+  ::-webkit-scrollbar-thumb{background:#2a3441;border-radius:3px;}
+  ::-webkit-scrollbar-thumb:hover{background:#3a4451;}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div>
+    <h1 data-i18n="appTitle">AI REEL STUDIO</h1>
+    <div class="sub" data-i18n="appSubtitle">Text → AI → animated scenes → video · with Benchmark mode</div>
+  </div>
+  <div class="lang-switch">
+    <button id="uiLangEn" class="active" data-lang="en">EN</button>
+    <button id="uiLangAr" data-lang="ar">عربي</button>
+  </div>
+</div>
+
+<div class="layout">
+  <!-- LEFT: input + settings -->
+  <div>
+    <div class="tab-nav" id="leftTabNav">
+      <button class="active" data-tab="write" data-i18n="tabWrite">1 · Write</button>
+      <button data-tab="bench" data-i18n="tabBench">Benchmark</button>
+      <button data-tab="style" data-i18n="tabStyle">2 · Style</button>
+      <button data-tab="audio" data-i18n="tabAudio">3 · Audio</button>
+    </div>
+
+    <!-- ========== WRITE TAB ========== -->
+    <div class="tab-pane active" data-pane="write">
+      <div class="panel">
+        <div class="panel-title" data-i18n="aiTitle">AI Provider</div>
+        <label data-i18n="providerLabel">Provider</label>
+        <select id="aiProvider">
+          <option value="lmstudio" selected>LM Studio (local)</option>
+          <option value="openrouter">OpenRouter (cloud)</option>
+          <option value="custom">Custom API (OpenAI-compatible)</option>
+        </select>
+        <div id="lmPanel">
+          <label data-i18n="lmBaseUrl">Base URL</label>
+          <input type="text" id="baseUrl" value="http://localhost:1234/v1">
+        </div>
+        <div id="apiKeyPanel" style="display:none;">
+          <label data-i18n="apiKeyLabel">API Key</label>
+          <input type="text" id="apiKey" placeholder="sk-or-...">
+        </div>
+        <div class="row" style="margin-top:8px;">
+          <div style="flex:2;">
+            <label data-i18n="lmModel">Model</label>
+            <select id="modelSel"><option value="">—</option></select>
+          </div>
+          <div style="flex:1;">
+            <label data-i18n="lmStatus">Status</label>
+            <div style="padding:7px 0;font-size:12px;display:flex;align-items:center;gap:6px;">
+              <span class="status-dot unk" id="lmStatus"></span><span id="lmStatusText" style="font-family:'IBM Plex Mono';">unknown</span>
+            </div>
+          </div>
+        </div>
+        <button class="btn-ghost" id="checkLmBtn" data-i18n="lmCheckBtn">⟳ Check connection & load models</button>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title" data-i18n="scriptTitle">Your Script / Text</div>
+        <textarea id="scriptInput" rows="6" data-i18n-ph="scriptPlaceholder" placeholder="Write your text here... paste a script, article, numbers, or any content you want turned into a video.&#10;&#10;Example:&#10;5 reasons to learn programming&#10;1- High demand for developers in the job market&#10;2- Higher pay compared to other fields&#10;..."></textarea>
+        <button class="btn-magic" id="generateBtn" data-i18n="generateBtn">✨ Generate Scenes with AI</button>
+        <div class="err" id="genError"></div>
+        <div class="note" id="genStatus" style="display:none;"></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title" data-i18n="structTitle">Structure Templates</div>
+        <div class="note" style="margin-top:0;margin-bottom:6px;" data-i18n="structNote">Skip the AI — drop in a proven scene skeleton and just fill in the blanks.</div>
+        <div class="tpl-row" id="structTplRow"></div>
+      </div>
+    </div>
+
+    <!-- ========== BENCHMARK TAB ========== -->
+    <div class="tab-pane" data-pane="bench">
+      <div class="panel">
+        <div class="panel-title" data-i18n="benchLoadTitle">Load Benchmark Report(s)</div>
+        <label data-i18n="pasteJsonLabel">Paste report JSON</label>
+        <textarea id="jsonInput" rows="4" placeholder='{"model": "llama3.1:8b", "gpu": "RTX 4090", "backend": "Ollama", "avg_tokens_per_sec": 89.4, ...}'></textarea>
+        <button class="btn-ghost btn-small" id="addJsonBtn" data-i18n="addJsonBtn" style="width:auto;">+ Add pasted JSON</button>
+        <label data-i18n="uploadJsonLabel">...or upload .json file(s)</label>
+        <input type="file" id="benchFileInput" accept=".json" multiple>
+        <button class="btn-ghost btn-small" id="sampleBtn" data-i18n="sampleBtn" style="width:auto;">Load 3 sample reports</button>
+
+        <label style="margin-top:14px;" data-i18n="loadedReportsLabel">Loaded reports (played in this order)</label>
+        <div class="report-list" id="reportList"></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title" data-i18n="benchSettingsTitle">Benchmark Reel Settings</div>
+        <label data-i18n="seriesTitleLabel">Series title (intro card)</label>
+        <input type="text" id="benchTitleInput" value="LOCAL AI BENCHMARK">
+        <label data-i18n="seriesSubLabel">Series subtitle</label>
+        <input type="text" id="benchSubInput" value="GPU Comparison Series">
+        <div class="checkbox-row">
+          <input type="checkbox" id="leaderboardChk" checked>
+          <label style="margin:0;text-transform:none;font-weight:400;" data-i18n="leaderboardLabel">Add leaderboard scene (2+ reports)</label>
+        </div>
+        <button class="btn-magic" id="buildBenchBtn" data-i18n="buildBenchBtn">🎬 Build Benchmark Reel</button>
+        <div class="note" id="benchStatus" data-i18n="benchStatusDefault">Load at least one report, then build the reel.</div>
+      </div>
+    </div>
+
+    <!-- ========== STYLE TAB ========== -->
+    <div class="tab-pane" data-pane="style">
+      <div class="panel">
+        <div class="panel-title" data-i18n="reelSettingsTitle">Reel Settings</div>
+        <label data-i18n="formatLabel">Format</label>
+        <select id="formatSel">
+          <option value="vertical" selected data-i18n="formatVertical">Vertical 9:16 — Reels/Shorts/TikTok</option>
+          <option value="square" data-i18n="formatSquare">Square 1:1 — Feed</option>
+          <option value="horizontal" data-i18n="formatHorizontal">Horizontal 16:9 — YouTube</option>
+        </select>
+        <label data-i18n="paceLabel">Pace</label>
+        <select id="paceSel">
+          <option value="0.7" data-i18n="paceFast">Fast — punchy</option>
+          <option value="1" selected data-i18n="paceNormal">Normal</option>
+          <option value="1.35" data-i18n="paceCinematic">Cinematic — slow</option>
+        </select>
+        <div class="row">
+          <div>
+            <label data-i18n="contentDirLabel">Reel Text Direction</label>
+            <select id="langSel">
+              <option value="ltr" selected data-i18n="dirLtr">English (LTR)</option>
+              <option value="rtl" data-i18n="dirRtl">Arabic (RTL)</option>
+            </select>
+          </div>
+        </div>
+        <div class="checkbox-row">
+          <input type="checkbox" id="captionsChk">
+          <label style="margin:0;text-transform:none;font-weight:400;" data-i18n="captionsLabel">Burn word-by-word captions at the bottom</label>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title" data-i18n="bgTitle">Background Media</div>
+        <label data-i18n="bgUploadLabel">Upload image or video</label>
+        <input type="file" id="bgUpload" accept="image/*,video/*">
+        <div class="row" style="margin-top:8px;">
+          <button class="btn-ghost btn-small" id="bgClearBtn" style="width:auto;" data-i18n="bgClearBtn">✕ Remove background</button>
+        </div>
+        <div class="row" style="margin-top:8px;">
+          <div>
+            <label data-i18n="panXLabel">Pan X</label>
+            <input type="range" id="bgPanX" min="-100" max="100" value="0">
+          </div>
+          <div>
+            <label data-i18n="panYLabel">Pan Y</label>
+            <input type="range" id="bgPanY" min="-100" max="100" value="0">
+          </div>
+        </div>
+        <div class="row" style="margin-top:8px;">
+          <div>
+            <label data-i18n="bgScaleLabel">Scale</label>
+            <input type="range" id="bgScale" min="50" max="300" value="100">
+          </div>
+          <div>
+            <label data-i18n="bgDimLabel">Dim (for text)</label>
+            <input type="range" id="bgDim" min="0" max="90" value="45">
+          </div>
+        </div>
+        <div class="note" id="bgStatus" style="margin-top:6px;" data-i18n="bgStatusDefault">No background — using default animated gradient.</div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title" data-i18n="brandTitle">Brand Kit</div>
+        <label data-i18n="templateLabel">Template</label>
+        <div class="tpl-row" id="tplRow"></div>
+        <div class="row" style="margin-top:10px;">
+          <div>
+            <label data-i18n="primaryColorLabel">Primary color</label>
+            <input type="color" id="brandPrimary" value="#3fd0ff">
+          </div>
+          <div>
+            <label data-i18n="accentColorLabel">Accent color</label>
+            <input type="color" id="brandAccent" value="#5fe38a">
+          </div>
+        </div>
+        <label data-i18n="logoLabel">Logo (optional, shown bottom-right)</label>
+        <input type="file" id="logoUpload" accept="image/*">
+        <div class="btn-row-tight">
+          <button class="btn-ghost btn-small" id="logoClearBtn" data-i18n="logoClearBtn">✕ Remove logo</button>
+        </div>
+        <div class="note" id="brandStatus" style="margin-top:6px;" data-i18n="brandStatusDefault">Default theme.</div>
+      </div>
+    </div>
+
+    <!-- ========== AUDIO TAB ========== -->
+    <div class="tab-pane" data-pane="audio">
+      <div class="panel">
+        <div class="panel-title" data-i18n="voiceMusicTitle">Voice & Music</div>
+        <label data-i18n="builtinMusicLabel">Built-in music (generated, royalty-free — no external tracks)</label>
+        <div class="tpl-row" id="synthMusicRow"></div>
+        <label style="margin-top:10px;" data-i18n="uploadOwnLabel">...or upload your own</label>
+        <input type="file" id="musicUpload" accept="audio/*">
+        <label style="margin-top:8px;" data-i18n="musicVolumeLabel">Music volume</label>
+        <input type="range" id="musicVolume" min="0" max="1" step="0.05" value="0.5">
+        <div class="btn-row-tight">
+          <button class="btn-ghost btn-small" id="musicClearBtn" data-i18n="musicClearBtn">✕ Remove music</button>
+        </div>
+
+        <label style="margin-top:12px;" data-i18n="voiceoverLabel">Voiceover (record with mic)</label>
+        <div class="btn-row-tight">
+          <button class="btn-record btn-small" id="voRecordBtn" data-i18n="voRecordBtn">⏺ Record</button>
+          <button class="btn-ghost btn-small" id="voStopBtn" disabled data-i18n="voStopBtn">■ Stop</button>
+          <button class="btn-ghost btn-small" id="voClearBtn" data-i18n="voClearBtn">✕ Clear</button>
+        </div>
+        <audio id="voPreview" controls style="display:none;"></audio>
+        <div class="note" id="voStatus" style="margin-top:4px;" data-i18n="voStatusDefault">No voiceover recorded. Music and voiceover are mixed into the exported video's audio track.</div>
+        <div class="checkbox-row">
+          <input type="checkbox" id="ttsPreviewChk">
+          <label style="margin:0;text-transform:none;font-weight:400;" data-i18n="ttsPreviewLabel">Speak scene text aloud during Play (preview only — browser voices can't be captured into the exported video, so use the recorder above or upload a voiceover file for real narration)</label>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CENTER: stage -->
+  <div>
+    <div class="stage-wrap">
+      <canvas id="stage" width="1080" height="1920"></canvas>
+      <div class="rec-badge" id="recBadge"><div class="rec-dot"></div>REC</div>
+    </div>
+    <div class="transport">
+      <button class="btn-primary" id="playBtn" data-i18n="playBtn">▶ Play</button>
+      <button class="btn-ghost" id="stopBtn" disabled data-i18n="stopBtn">■ Stop</button>
+      <button class="btn-record" id="recordBtn" data-i18n="exportBtn">⏺ Export</button>
+      <div class="scene-label" id="sceneLabel" data-i18n="noScenesYet">no scenes yet</div>
+      <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+    </div>
+    <div class="checkbox-row">
+      <input type="checkbox" id="mp4Chk" checked>
+      <label style="margin:0;text-transform:none;font-weight:400;" data-i18n="mp4ChkLabel">Auto-convert to MP4 after export (runs locally in your browser, takes a bit longer)</label>
+    </div>
+    <div class="checkbox-row">
+      <input type="checkbox" id="watermarkChk">
+      <label style="margin:0;text-transform:none;font-weight:400;" data-i18n="watermarkChkLabel">Add "Made with AI Reel Studio" watermark (free-plan export)</label>
+    </div>
+    <div class="progress-track" id="convertProgressWrap" style="display:none;margin-top:8px;"><div class="progress-fill" id="convertProgressFill" style="background:var(--purple);"></div></div>
+    <div class="note" id="statusNote" data-i18n="statusNoteDefault">
+      Write some text and hit Generate, or add scenes manually on the right, then Play to preview or Export for the video.
+    </div>
+  </div>
+
+  <!-- RIGHT: scene editor / batch -->
+  <div>
+    <div class="tab-nav" id="rightTabNav">
+      <button class="active" data-tab="scenes" data-i18n="tabScenes">Scenes</button>
+      <button data-tab="batch" data-i18n="tabBatch">Batch</button>
+    </div>
+
+    <div class="tab-pane active" data-pane="scenes">
+      <div class="panel">
+        <div class="panel-title">
+          <span data-i18n="scenesEditorTitle">Scenes Editor</span>
+          <span id="sceneCount" style="margin-left:auto;color:var(--dim2);">0</span>
+        </div>
+        <div class="row" style="margin-top:0;">
+          <div>
+            <label data-i18n="newSceneTypeLabel" style="margin-top:0;">New scene type</label>
+            <select id="newSceneType">
+              <option value="intro" data-i18n="typeIntro">Intro</option>
+              <option value="title" data-i18n="typeTitle">Title / Lower-third</option>
+              <option value="bullet" data-i18n="typeBullet">Bullet list</option>
+              <option value="stat" data-i18n="typeStat">Big stat</option>
+              <option value="comparison" data-i18n="typeComparison">Comparison (A vs B)</option>
+              <option value="quote" data-i18n="typeQuote">Quote</option>
+              <option value="outro" data-i18n="typeOutro">Outro / CTA</option>
+              <option value="benchmark_model" data-i18n="typeBenchModel">Benchmark: Model Title</option>
+              <option value="benchmark_hero" data-i18n="typeBenchHero">Benchmark: Hero Stats</option>
+              <option value="benchmark_secondary" data-i18n="typeBenchSecondary">Benchmark: Telemetry</option>
+              <option value="benchmark_leaderboard" data-i18n="typeBenchLeaderboard">Benchmark: Leaderboard</option>
+            </select>
+          </div>
+        </div>
+        <div class="btn-row-tight">
+          <button class="btn-ghost btn-small" id="addSceneBtn" data-i18n="addSceneBtn">+ Add scene</button>
+          <button class="btn-ghost btn-small" id="undoBtn" disabled data-i18n="undoBtn">↶ Undo</button>
+          <button class="btn-ghost btn-small" id="redoBtn" disabled data-i18n="redoBtn">↷ Redo</button>
+        </div>
+        <div class="btn-row-tight" style="margin-bottom:8px;">
+          <button class="btn-ghost btn-small" id="saveProjectBtn" data-i18n="saveProjectBtn">💾 Save project</button>
+          <label class="btn-ghost btn-small" for="loadProjectInput" style="display:flex;align-items:center;justify-content:center;cursor:pointer;" data-i18n="loadProjectBtn">📂 Load project</label>
+          <input type="file" id="loadProjectInput" accept="application/json" style="display:none;">
+        </div>
+        <div class="note" id="durationNote" style="margin-top:0;">0.0s total</div>
+        <div class="scene-editor-list" id="sceneEditorList"></div>
+      </div>
+    </div>
+
+    <div class="tab-pane" data-pane="batch">
+      <div class="panel">
+        <div class="panel-title" data-i18n="batchTitle">Batch Export</div>
+        <div class="batch-note" data-i18n="batchNote">Paste multiple scripts, each separated by a line with just "---". Each one gets its own AI-generated scenes and its own exported file, one after another.</div>
+        <textarea id="batchInput" rows="6" placeholder="Script 1...&#10;---&#10;Script 2...&#10;---&#10;Script 3..."></textarea>
+        <button class="btn-magic" id="batchRunBtn" data-i18n="batchRunBtn">▶ Generate & Export All</button>
+        <div class="err" id="batchError"></div>
+        <div class="batch-log" id="batchLog"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg.min.js"></script>
+
+<script>
+// ============================================================ canvas setup
+const canvas = document.getElementById('stage');
+const ctx = canvas.getContext('2d');
+let W = canvas.width, H = canvas.height;
+
+const FORMATS = {
+  vertical:   {w:1080, h:1920},
+  square:     {w:1080, h:1080},
+  horizontal: {w:1920, h:1080},
+};
+
+function applyFormat(){
+  const key = document.getElementById('formatSel').value;
+  const f = FORMATS[key] || FORMATS.vertical;
+  canvas.width = f.w; canvas.height = f.h;
+  W = canvas.width; H = canvas.height;
+  rebuildParticles();
+  drawAtTime(0);
+}
+
+// ============================================================ state
+let scenes = [];       // array of {id, type, fields, dur}
+let playing = false, recording = false, animStart = null, loopMode = true;
+let mediaRecorder = null, recordedChunks = [];
+let selectedSceneIdx = null;
+
+// benchmark reports store
+let reports = [];
+
+// background media (uploaded image or video)
+let bgMediaEl = null;
+let bgMediaType = null;
+let bgMediaReady = false;
+
+// ============================================================ brand kit / theme
+function hexToRgb(hex){
+  const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  return m ? {r:parseInt(m[1],16), g:parseInt(m[2],16), b:parseInt(m[3],16)} : {r:63,g:208,b:255};
+}
+let THEME = { primary:'#3fd0ff', accent:'#5fe38a' };
+
+const TEMPLATES = [
+  {name:'Neon Cyan',   primary:'#3fd0ff', accent:'#5fe38a'},
+  {name:'Sunset',      primary:'#ffb454', accent:'#ff6b6b'},
+  {name:'Mono Elegant',primary:'#e8edf4', accent:'#9aa5b4'},
+  {name:'Bold Red',    primary:'#ff5470', accent:'#ffd166'},
+  {name:'Forest',      primary:'#5fe38a', accent:'#3fd0ff'},
+  {name:'Royal Purple',primary:'#b794f6', accent:'#3fd0ff'},
+];
+
+let logoEl = null;
+
+function saveBrandKit(){
+  try { localStorage.setItem('aiReelBrand', JSON.stringify({primary:THEME.primary, accent:THEME.accent})); }
+  catch(e){}
+}
+function loadBrandKit(){
+  try {
+    const raw = localStorage.getItem('aiReelBrand');
+    if (raw){ const b = JSON.parse(raw); THEME.primary = b.primary || THEME.primary; THEME.accent = b.accent || THEME.accent; }
+  } catch(e){}
+}
+
+// ============================================================ audio (music + voiceover)
+let musicFile = null, musicEl = null;
+let musicMode = 'none';
+let synthPreset = null;
+let voiceoverBlob = null;
+let voRecorder = null, voChunks = [], voStream = null;
+
+// ============================================================ undo/redo history
+let undoStack = [], redoStack = [];
+function makeId(){ return 'sc_' + Math.random().toString(36).slice(2,9); }
+function snapshotScenes(){ return JSON.parse(JSON.stringify(scenes)); }
+function pushHistory(){
+  undoStack.push(snapshotScenes());
+  if (undoStack.length>30) undoStack.shift();
+  redoStack = [];
+  updateUndoRedoButtons();
+}
+function updateUndoRedoButtons(){
+  document.getElementById('undoBtn').disabled = !undoStack.length;
+  document.getElementById('redoBtn').disabled = !redoStack.length;
+}
+
+// ============================================================ per-scene background overrides
+let sceneBgMedia = {};
+
+// ============================================================ background pan
+let bgPanX = 0, bgPanY = 0;
+let bgScale = 1;        // user zoom on background image/video (1 = fit)
+let bgDim = 0.45;       // dark overlay over background media so text stays readable
+
+// ============================================================ scene type definitions
+const DEFAULT_DURATIONS = {
+  intro:3.2, title:2.2, bullet:4.5, stat:3.0, comparison:4.5, quote:3.0, outro:3.2,
+  benchmark_model:2.3, benchmark_hero:4.2, benchmark_secondary:4.8, benchmark_leaderboard:5.5,
+};
+
+const DEFAULT_FIELDS = {
+  intro:      {title:'Your hook goes here', subtitle:'a short supporting line'},
+  title:      {label:'SECTION', title:'Edit me'},
+  bullet:     {title:'List title', items:['Point one','Point two','Point three']},
+  stat:       {label:'the key stat', value:'87', unit:'%'},
+  comparison: {title:'A vs B', left_label:'OPTION A', left_value:'value', right_label:'OPTION B', right_value:'value'},
+  quote:      {text:'A short, punchy quote goes here.', author:'Source'},
+  outro:      {title:'Call to action', subtitle:'Follow for more'},
+  benchmark_model:      {model:'llama3.1:8b', gpu:'RTX 4090 24GB', backend:'Ollama'},
+  benchmark_hero:       {model:'llama3.1:8b', avg_tokens_per_sec:'89.4', avg_ttft_s:'0.18'},
+  benchmark_secondary:  {model:'llama3.1:8b', avg_gpu_util_pct:'78', peak_gpu_util_pct:'95', peak_vram_mb:'6350', avg_gpu_temp_c:'59', peak_gpu_temp_c:'66', avg_gpu_power_w:'265', avg_cpu_pct:'19', peak_ram_mb:'8100'},
+  benchmark_leaderboard:{reports:'[{"model":"RTX 4090","gpu":"24GB","avg_tokens_per_sec":"89.4"}, {"model":"RTX 3060","gpu":"12GB","avg_tokens_per_sec":"34.2"}]'},
+};
+const SCENE_TYPE_NAMES = {
+  intro:'Intro', title:'Title', bullet:'Bullet', stat:'Stat',
+  comparison:'Comparison', quote:'Quote', outro:'Outro',
+  benchmark_model:'Bench: Model', benchmark_hero:'Bench: Hero', benchmark_secondary:'Bench: Telemetry', benchmark_leaderboard:'Bench: Leaderboard',
+};
+
+// ============================================================ structure templates
+const STRUCT_TEMPLATES = {
+  'Hook·Problem·Solution·CTA': [
+    {type:'intro',  fields:{title:'Wait, did you know this?', subtitle:'you need to hear this'}},
+    {type:'title',  fields:{label:'THE PROBLEM', title:'Describe the pain point here'}},
+    {type:'bullet', fields:{title:'Why it happens', items:['Reason one','Reason two','Reason three']}},
+    {type:'title',  fields:{label:'THE FIX', title:'Your solution in one line'}},
+    {type:'outro',  fields:{title:'Try it today', subtitle:'Follow for more'}},
+  ],
+  'Listicle': [
+    {type:'intro',  fields:{title:'5 Things You Need', subtitle:'before you start'}},
+    {type:'bullet', fields:{title:'Top picks', items:['Point 1','Point 2','Point 3','Point 4','Point 5']}},
+    {type:'outro',  fields:{title:'Which one surprised you?', subtitle:'Comment below'}},
+  ],
+  'Before/After': [
+    {type:'intro',      fields:{title:'The transformation', subtitle:''}},
+    {type:'comparison', fields:{title:'Before vs After', left_label:'BEFORE', left_value:'old result', right_label:'AFTER', right_value:'new result'}},
+    {type:'quote',      fields:{text:'A short testimonial or takeaway goes here.', author:'Customer'}},
+    {type:'outro',      fields:{title:'Ready for yours?', subtitle:'Link in bio'}},
+  ],
+  'Stat·Quote·CTA': [
+    {type:'intro', fields:{title:'This number will surprise you', subtitle:''}},
+    {type:'stat',  fields:{label:'the key stat', value:'87', unit:'%'}},
+    {type:'quote', fields:{text:'A supporting quote that reinforces the stat.', author:'Source'}},
+    {type:'outro', fields:{title:'Learn more', subtitle:'Link in bio'}},
+  ],
+};
+
+// ============================================================ HTML escaping (FIXED: escapes quotes too)
+function escHtml(s){
+  return String(s)
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;')
+    .replace(/'/g,'&#39;');
+}
+function escAttr(s){ return escHtml(s); } // same logic — escapes quotes for attribute safety
+
+// ============================================================ AI provider system
+function getProviderSettings(){
+  const provider = document.getElementById('aiProvider').value;
+  const apiKey = document.getElementById('apiKey').value.trim();
+  if (provider === 'openrouter'){
+    return { baseUrl:'https://openrouter.ai/api/v1', apiKey, needsAuth:!!apiKey };
+  } else if (provider === 'custom'){
+    const baseUrl = document.getElementById('baseUrl').value.trim().replace(/\/+$/,'');
+    return { baseUrl, apiKey, needsAuth:!!apiKey };
+  }
+  // lmstudio
+  const baseUrl = document.getElementById('baseUrl').value.trim().replace(/\/+$/,'');
+  return { baseUrl, apiKey:null, needsAuth:false };
+}
+
+async function aiFetch(path, opts={}){
+  const { baseUrl, apiKey, needsAuth } = getProviderSettings();
+  const headers = { ...(opts.headers||{}) };
+  if (needsAuth && apiKey) headers['Authorization'] = 'Bearer ' + apiKey;
+  const res = await fetch(baseUrl + path, { ...opts, headers });
+  if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
+  return res;
+}
+
+async function checkLmStudio(){
+  const dot = document.getElementById('lmStatus');
+  const txt = document.getElementById('lmStatusText');
+  const sel = document.getElementById('modelSel');
+  dot.className = 'status-dot unk';
+  txt.textContent = 'checking...';
+  try {
+    const res = await aiFetch('/models');
+    const data = await res.json();
+    const models = (data.data || []).map(m => m.id);
+    sel.innerHTML = models.length
+      ? models.map(m=>`<option value="${escAttr(m)}">${escHtml(m)}</option>`).join('')
+      : '<option value="">no models loaded</option>';
+    dot.className = 'status-dot ok';
+    txt.textContent = models.length ? `${models.length} model(s)` : 'connected';
+    return models;
+  } catch(e){
+    dot.className = 'status-dot bad';
+    txt.textContent = 'offline';
+    sel.innerHTML = '<option value="">—</option>';
+    return null;
+  }
+}
+
+// toggle between lmstudio (show baseUrl) and other providers (show apiKey)
+function updateProviderUI(){
+  const provider = document.getElementById('aiProvider').value;
+  const lmPanel = document.getElementById('lmPanel');
+  const apiKeyPanel = document.getElementById('apiKeyPanel');
+  if (provider === 'lmstudio'){
+    lmPanel.style.display = 'block';
+    apiKeyPanel.style.display = 'none';
+  } else if (provider === 'openrouter'){
+    lmPanel.style.display = 'none';
+    apiKeyPanel.style.display = 'block';
+  } else { // custom
+    lmPanel.style.display = 'block';
+    apiKeyPanel.style.display = 'block';
+  }
+}
+
+const SCENE_SCHEMA_DESC = `You are a video scene planner. Break the user's text into a sequence of animated scenes for a short-form video reel.
+Output ONLY a JSON object: {"lang":"ltr" or "rtl", "scenes":[...]}.
+Do NOT wrap in markdown fences. Do NOT add commentary.
+
+Scene types and their fields:
+- {"type":"intro","fields":{"title":"main title","subtitle":"optional subtitle"}}
+- {"type":"title","fields":{"label":"small label above","title":"big title"}}
+- {"type":"bullet","fields":{"title":"section title","items":["point 1","point 2","point 3"]}}
+- {"type":"stat","fields":{"label":"what the stat is","value":"the number","unit":"optional unit"}}
+- {"type":"comparison","fields":{"title":"comparison title","left_label":"A","left_value":"val","right_label":"B","right_value":"val"}}
+- {"type":"quote","fields":{"text":"the quote","author":"optional source"}}
+- {"type":"outro","fields":{"title":"closing message","subtitle":"optional CTA"}}
+
+Rules:
+- Use "ltr" for English/Latin text, "rtl" for Arabic/Hebrew.
+- Keep text concise (fits on screen). Break long text into multiple scenes.
+- Start with intro, end with outro.
+- Pick scene types that fit the content naturally.
+- Detect the text's language and set "lang" accordingly.`;
+
+async function generateScenesFromText(script){
+  const model = document.getElementById('modelSel').value;
+  if (!model) throw new Error('No model selected. Check connection.');
+  const res = await aiFetch('/chat/completions', {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({
+      model,
+      messages:[
+        {role:'system', content: SCENE_SCHEMA_DESC},
+        {role:'user', content: script},
+      ],
+      temperature: 0.4,
+    }),
+  });
+  const data = await res.json();
+  let raw = data.choices?.[0]?.message?.content || '';
+  raw = raw.replace(/```json\s*/gi,'').replace(/```\s*/g,'').trim();
+  const parsed = JSON.parse(raw);
+  if (!parsed.scenes || !Array.isArray(parsed.scenes)) throw new Error('Invalid response: no scenes array.');
+  const result = parsed.scenes.map(s => ({
+    id: makeId(),
+    type: s.type,
+    fields: s.fields || {},
+    dur: DEFAULT_DURATIONS[s.type] || 3.0,
+  }));
+  return { scenes: result, lang: parsed.lang };
+}
+
+async function generateScenes(){
+  const btn = document.getElementById('generateBtn');
+  const errEl = document.getElementById('genError');
+  const statusEl = document.getElementById('genStatus');
+  errEl.classList.remove('show');
+  statusEl.style.display = 'block';
+  statusEl.textContent = 'Generating...';
+
+  const script = document.getElementById('scriptInput').value.trim();
+  if (!script){ errEl.textContent = 'Write some text first.'; errEl.classList.add('show'); statusEl.style.display='none'; return; }
+
+  btn.disabled = true; btn.classList.add('loading'); btn.textContent = '⏳ Working...';
+  try {
+    const { scenes: newScenes, lang } = await generateScenesFromText(script);
+    if (scenes.length) pushHistory();
+    scenes = newScenes;
+    if (lang) document.getElementById('langSel').value = lang;
+    renderSceneEditor();
+    buildTimeline();
+    statusEl.textContent = `✓ Generated ${scenes.length} scenes. Review & edit on the right.`;
+  } catch(e){
+    errEl.textContent = 'Error: ' + e.message;
+    errEl.classList.add('show');
+    statusEl.style.display = 'none';
+  } finally {
+    btn.disabled = false; btn.classList.remove('loading'); btn.textContent = '✨ Generate Scenes with AI';
+  }
+}
+
+// ============================================================ benchmark report store
+function normalizeReport(raw){
+  const s = raw.summary ? raw.summary : raw;
+  return {
+    model: s.model || 'unknown-model',
+    gpu: s.gpu || 'unknown-gpu',
+    backend: s.backend || 'unknown-backend',
+    avg_tokens_per_sec: s.avg_tokens_per_sec ?? null,
+    avg_ttft_s: s.avg_ttft_s ?? null,
+    avg_gpu_util_pct: s.avg_gpu_util_pct ?? null,
+    peak_gpu_util_pct: s.peak_gpu_util_pct ?? null,
+    peak_vram_mb: s.peak_vram_mb ?? null,
+    avg_gpu_temp_c: s.avg_gpu_temp_c ?? null,
+    peak_gpu_temp_c: s.peak_gpu_temp_c ?? null,
+    avg_gpu_power_w: s.avg_gpu_power_w ?? null,
+    avg_cpu_pct: s.avg_cpu_pct ?? null,
+    peak_ram_mb: s.peak_ram_mb ?? null,
+  };
+}
+
+function renderReportList(){
+  const el = document.getElementById('reportList');
+  if (!reports.length){
+    el.innerHTML = '<div style="color:var(--dim2);font-size:11.5px;font-style:italic;padding:6px 0;">No reports loaded yet.</div>';
+    return;
+  }
+  el.innerHTML = reports.map((r,i) => `
+    <div class="report-item">
+      <div class="ri-name">${escHtml(r.model)} <span style="color:var(--dim2)">· ${escHtml(r.gpu)}</span></div>
+      <div class="ri-tps">${r.avg_tokens_per_sec != null ? r.avg_tokens_per_sec.toFixed(1)+' t/s' : 'n/a'}</div>
+      <button class="ri-remove" data-idx="${i}">×</button>
+    </div>
+  `).join('');
+  el.querySelectorAll('.ri-remove').forEach(btn => {
+    btn.addEventListener('click', () => {
+      reports.splice(parseInt(btn.dataset.idx), 1);
+      renderReportList();
+    });
+  });
+}
+
+document.getElementById('addJsonBtn').addEventListener('click', () => {
+  const raw = document.getElementById('jsonInput').value.trim();
+  if (!raw) return;
+  try {
+    reports.push(normalizeReport(JSON.parse(raw)));
+    document.getElementById('jsonInput').value = '';
+    renderReportList();
+  } catch(e) { alert('Could not parse JSON: ' + e.message); }
+});
+
+document.getElementById('benchFileInput').addEventListener('change', async (e) => {
+  for (const file of e.target.files){
+    try { reports.push(normalizeReport(JSON.parse(await file.text()))); }
+    catch(err){ console.error('Failed to load', file.name, err); }
+  }
+  renderReportList();
+  e.target.value = '';
+});
+
+document.getElementById('sampleBtn').addEventListener('click', () => {
+  reports = [
+    {model:'llama3.1:8b-q4_K_M', gpu:'[NVIDIA] RTX 3060 12GB', backend:'Ollama',
+     avg_tokens_per_sec:34.2, avg_ttft_s:0.41, avg_gpu_util_pct:86, peak_gpu_util_pct:98,
+     peak_vram_mb:6120, avg_gpu_temp_c:67, peak_gpu_temp_c:74, avg_gpu_power_w:142, avg_cpu_pct:21, peak_ram_mb:8200},
+    {model:'llama3.1:8b-q4_K_M', gpu:'[AMD] RX 6800 XT 16GB', backend:'Ollama',
+     avg_tokens_per_sec:28.9, avg_ttft_s:0.52, avg_gpu_util_pct:91, peak_gpu_util_pct:99,
+     peak_vram_mb:6480, avg_gpu_temp_c:71, peak_gpu_temp_c:79, avg_gpu_power_w:195, avg_cpu_pct:24, peak_ram_mb:8350},
+    {model:'llama3.1:8b-q4_K_M', gpu:'[NVIDIA] RTX 4090 24GB', backend:'Ollama',
+     avg_tokens_per_sec:89.4, avg_ttft_s:0.18, avg_gpu_util_pct:78, peak_gpu_util_pct:95,
+     peak_vram_mb:6350, avg_gpu_temp_c:59, peak_gpu_temp_c:66, avg_gpu_power_w:265, avg_cpu_pct:19, peak_ram_mb:8100},
+  ];
+  renderReportList();
+});
+
+// Build benchmark scenes from loaded reports → unified scenes array
+document.getElementById('buildBenchBtn').addEventListener('click', () => {
+  if (!reports.length){ document.getElementById('benchStatus').textContent = 'Load at least one report first.'; return; }
+  if (scenes.length) pushHistory();
+  const title = document.getElementById('benchTitleInput').value || 'BENCHMARK';
+  const subtitle = document.getElementById('benchSubInput').value || '';
+  const wantLeaderboard = document.getElementById('leaderboardChk').checked;
+
+  scenes = [];
+  scenes.push({id:makeId(), type:'intro', fields:{title, subtitle}, dur:DEFAULT_DURATIONS.intro});
+  reports.forEach(r => {
+    scenes.push({id:makeId(), type:'benchmark_model', fields:{model:r.model, gpu:r.gpu, backend:r.backend}, dur:DEFAULT_DURATIONS.benchmark_model});
+    scenes.push({id:makeId(), type:'benchmark_hero', fields:{model:r.model, avg_tokens_per_sec:String(r.avg_tokens_per_sec ?? ''), avg_ttft_s:String(r.avg_ttft_s ?? '')}, dur:DEFAULT_DURATIONS.benchmark_hero});
+    scenes.push({id:makeId(), type:'benchmark_secondary', fields:{
+      model:r.model, avg_gpu_util_pct:String(r.avg_gpu_util_pct ?? ''), peak_gpu_util_pct:String(r.peak_gpu_util_pct ?? ''),
+      peak_vram_mb:String(r.peak_vram_mb ?? ''), avg_gpu_temp_c:String(r.avg_gpu_temp_c ?? ''), peak_gpu_temp_c:String(r.peak_gpu_temp_c ?? ''),
+      avg_gpu_power_w:String(r.avg_gpu_power_w ?? ''), avg_cpu_pct:String(r.avg_cpu_pct ?? ''), peak_ram_mb:String(r.peak_ram_mb ?? ''),
+    }, dur:DEFAULT_DURATIONS.benchmark_secondary});
+  });
+  if (wantLeaderboard && reports.length > 1){
+    const lbReports = reports.map(r => ({model:r.model, gpu:r.gpu, avg_tokens_per_sec:String(r.avg_tokens_per_sec ?? '0')}));
+    scenes.push({id:makeId(), type:'benchmark_leaderboard', fields:{reports:JSON.stringify(lbReports)}, dur:DEFAULT_DURATIONS.benchmark_leaderboard});
+  }
+  scenes.push({id:makeId(), type:'outro', fields:{title:'Full breakdown in the video', subtitle:'local ai benchmark'}, dur:DEFAULT_DURATIONS.outro});
+
+  renderSceneEditor();
+  buildTimeline();
+  drawAtTime(0);
+  document.getElementById('benchStatus').textContent = `✓ Built ${scenes.length} scenes from ${reports.length} report(s). Preview or Export below.`;
+});
+
+// ============================================================ scene editor UI
+function renderSceneThumb(sc){
+  const tw = 96, th = Math.round(tw * H / W);
+  const off = document.createElement('canvas'); off.width = tw; off.height = th;
+  const octx = off.getContext('2d');
+  octx.fillStyle = '#0c1119'; octx.fillRect(0,0,tw,th);
+  const rgb = hexToRgb(THEME.primary);
+  octx.fillStyle = `rgba(${rgb.r},${rgb.g},${rgb.b},0.18)`;
+  octx.fillRect(0,0,tw,th*0.5);
+  octx.fillStyle = THEME.primary; octx.font = '700 9px Inter'; octx.textAlign='center';
+  octx.fillText(sc.type.replace('benchmark_','b:').toUpperCase().slice(0,12), tw/2, th/2);
+  return off.toDataURL();
+}
+
+function renderSceneEditor(){
+  const list = document.getElementById('sceneEditorList');
+  document.getElementById('sceneCount').textContent = scenes.length;
+  if (!scenes.length){
+    list.innerHTML = '<div style="color:var(--dim2);font-size:11.5px;font-style:italic;padding:6px 0;">No scenes. Generate with AI, build a benchmark reel, or add manually.</div>';
+    return;
+  }
+  list.innerHTML = '';
+  scenes.forEach((sc, i) => {
+    if (!sc.id) sc.id = makeId();
+    const card = document.createElement('div');
+    card.className = 'scene-card' + (selectedSceneIdx===i ? ' selected' : '');
+    card.dataset.idx = i;
+
+    // leaderboard special case: reports field is JSON string
+    let fieldsHtml;
+    if (sc.type === 'benchmark_leaderboard'){
+      const val = typeof sc.fields.reports === 'string' ? sc.fields.reports : JSON.stringify(sc.fields.reports||[]);
+      fieldsHtml = `<div data-field="reports">
+        <label style="margin:4px 0 2px;font-size:9.5px;color:var(--dim2);">reports (JSON array: [{model, gpu, avg_tokens_per_sec}])</label>
+        <textarea rows="4" data-k="reports">${escHtml(val)}</textarea>
+      </div>`;
+    } else {
+      fieldsHtml = Object.entries(sc.fields).map(([k,v]) => {
+        const isList = Array.isArray(v);
+        const val = isList ? v.join('\n') : String(v);
+        return `<div data-field="${escAttr(k)}">
+          <label style="margin:4px 0 2px;font-size:9.5px;color:var(--dim2);">${escHtml(k)}${isList?' (one per line)':''}</label>
+          <textarea rows="${isList?Math.min(5,val.split('\n').length):1}" data-k="${escAttr(k)}">${escHtml(val)}</textarea>
+        </div>`;
+      }).join('');
+    }
+
+    const bgEntry = sceneBgMedia[sc.id];
+    const bgLabel = bgEntry && bgEntry.ready ? `✓ ${bgEntry.type} set` : 'no override — uses global background';
+
+    card.innerHTML = `
+      <div class="scene-card-head">
+        <img src="${renderSceneThumb(sc)}" style="width:34px;height:60px;object-fit:cover;border-radius:4px;border:1px solid var(--border);">
+        <select data-type-sel style="width:auto;min-width:120px;padding:4px 6px;font-size:10.5px;margin:0;" class="scene-type-badge scene-type-${sc.type}">
+          ${Object.keys(SCENE_TYPE_NAMES).map(t => `<option value="${escAttr(t)}" ${t===sc.type?'selected':''}>${escHtml(SCENE_TYPE_NAMES[t])}</option>`).join('')}
+        </select>
+        <label style="margin:0;font-size:9.5px;">dur</label>
+        <input type="text" data-dur="${i}" value="${escAttr(sc.dur)}" style="width:50px;padding:3px 6px;font-size:11px;">
+        <div class="scene-card-controls" style="margin:0 0 0 auto;">
+          <button class="btn-ghost btn-tiny" data-act="up">↑</button>
+          <button class="btn-ghost btn-tiny" data-act="down">↓</button>
+          <button class="btn-ghost btn-tiny" data-act="dup">⎘</button>
+          <button class="btn-ghost btn-tiny" data-act="del" style="color:var(--red);">✕</button>
+        </div>
+      </div>
+      <div class="scene-card-body">
+        ${fieldsHtml}
+        <div style="margin-top:6px;">
+          <label style="margin:0 0 2px;font-size:9.5px;color:var(--dim2);">scene background override</label>
+          <input type="file" accept="image/*,video/*" data-scene-bg="${escAttr(sc.id)}" style="font-size:10px;">
+          <div class="btn-row-tight">
+            <button class="btn-ghost btn-tiny" data-act="clearbg">✕ clear override</button>
+            <span style="font-size:9.5px;color:var(--dim2);align-self:center;">${escHtml(bgLabel)}</span>
+          </div>
+        </div>
+      </div>
+    `;
+
+    // field edits
+    card.querySelectorAll('textarea[data-k]').forEach(ta => {
+      ta.addEventListener('focus', () => { ta.dataset.pre = JSON.stringify(scenes[i].fields); });
+      ta.addEventListener('input', () => {
+        const k = ta.dataset.k;
+        const cur = scenes[i].fields[k];
+        if (sc.type === 'benchmark_leaderboard' || Array.isArray(cur)){
+          if (sc.type === 'benchmark_leaderboard'){
+            scenes[i].fields[k] = ta.value;
+          } else {
+            scenes[i].fields[k] = ta.value.split('\n').filter(s=>s.trim()!=='');
+          }
+        } else {
+          scenes[i].fields[k] = ta.value;
+        }
+        buildTimeline();
+      });
+      ta.addEventListener('blur', () => {
+        if (ta.dataset.pre && ta.dataset.pre !== JSON.stringify(scenes[i].fields)){
+          const snap = snapshotScenes();
+          snap[i].fields = JSON.parse(ta.dataset.pre);
+          undoStack.push(snap); if(undoStack.length>30) undoStack.shift(); redoStack=[]; updateUndoRedoButtons();
+        }
+      });
+    });
+    // change scene type
+    card.querySelector('select[data-type-sel]').addEventListener('change', (e) => {
+      const newType = e.target.value;
+      if (newType === scenes[i].type) return;
+      pushHistory();
+      scenes[i].type = newType;
+      scenes[i].fields = JSON.parse(JSON.stringify(DEFAULT_FIELDS[newType]));
+      scenes[i].dur = DEFAULT_DURATIONS[newType] || 3.0;
+      renderSceneEditor(); buildTimeline(); drawAtTime(0);
+    });
+    // dur edit
+    card.querySelector('input[data-dur]').addEventListener('change', (e) => {
+      const v = parseFloat(e.target.value);
+      if (!isNaN(v) && v > 0){ pushHistory(); scenes[i].dur = v; buildTimeline(); }
+    });
+    // per-scene background override
+    card.querySelector(`input[data-scene-bg="${CSS.escape(sc.id)}"]`).addEventListener('change', (e) => {
+      const file = e.target.files[0]; if (!file) return;
+      const url = URL.createObjectURL(file);
+      const isVideo = file.type.startsWith('video/');
+      if (isVideo){
+        const vid = document.createElement('video');
+        vid.src = url; vid.loop = true; vid.muted = true; vid.playsInline = true;
+        vid.addEventListener('loadeddata', () => { sceneBgMedia[sc.id] = {el:vid, type:'video', ready:true}; vid.play().catch(()=>{}); drawAtTime(0); renderSceneEditor(); });
+      } else {
+        const img = new Image();
+        img.onload = () => { sceneBgMedia[sc.id] = {el:img, type:'image', ready:true}; drawAtTime(0); renderSceneEditor(); };
+        img.src = url;
+      }
+    });
+    // control buttons
+    card.querySelectorAll('button[data-act]').forEach(btn => {
+      btn.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        const act = btn.dataset.act;
+        if (act==='clearbg'){ delete sceneBgMedia[sc.id]; renderSceneEditor(); drawAtTime(0); return; }
+        pushHistory();
+        if (act==='up' && i>0){ [scenes[i],scenes[i-1]]=[scenes[i-1],scenes[i]]; }
+        else if (act==='down' && i<scenes.length-1){ [scenes[i],scenes[i+1]]=[scenes[i+1],scenes[i]]; }
+        else if (act==='dup'){ const clone = JSON.parse(JSON.stringify(scenes[i])); clone.id = makeId(); scenes.splice(i+1,0,clone); }
+        else if (act==='del'){ scenes.splice(i,1); if(selectedSceneIdx===i) selectedSceneIdx=null; }
+        renderSceneEditor();
+        buildTimeline();
+      });
+    });
+    card.addEventListener('click', () => {
+      selectedSceneIdx = i;
+      document.querySelectorAll('.scene-card').forEach(c=>c.classList.remove('selected'));
+      card.classList.add('selected');
+    });
+
+    list.appendChild(card);
+  });
+}
+
+// ============================================================ background fx
+let particles = [];
+function rebuildParticles(){
+  particles = Array.from({length:60}, () => ({
+    x: Math.random()*W, y: Math.random()*H,
+    r: 1+Math.random()*2.2, speed: 8+Math.random()*22,
+    phase: Math.random()*Math.PI*2,
+  }));
+}
+rebuildParticles();
+
+function drawBgMedia(sceneId){
+  const override = sceneId ? sceneBgMedia[sceneId] : null;
+  const useOverride = override && override.ready;
+  const el = useOverride ? override.el : bgMediaEl;
+  const type = useOverride ? override.type : bgMediaType;
+  const ready = useOverride ? true : bgMediaReady;
+  if (!el || !ready) return false;
+  const mw = type==='video' ? el.videoWidth : el.naturalWidth;
+  const mh = type==='video' ? el.videoHeight : el.naturalHeight;
+  if (!mw || !mh) return false;
+  const fitScale = Math.max(W/mw, H/mh);
+  const scale = useOverride ? fitScale : fitScale * bgScale;   // user zoom multiplies the fit scale
+  const dw = mw*scale, dh = mh*scale;
+  const panX = useOverride ? 0 : bgPanX, panY = useOverride ? 0 : bgPanY;
+  const slackX = Math.max(0, dw-W)/2, slackY = Math.max(0, dh-H)/2;
+  const dx = (W-dw)/2 - panX*slackX;
+  const dy = (H-dh)/2 - panY*slackY;
+  try { ctx.drawImage(el, dx, dy, dw, dh); } catch(e){ return false; }
+  return true;
+}
+
+function drawBackground(t, sceneId){
+  ctx.fillStyle = '#070a0f';
+  ctx.fillRect(0,0,W,H);
+
+  const hasMedia = drawBgMedia(sceneId);
+  const pRgb = hexToRgb(THEME.primary);
+  const aRgb = hexToRgb(THEME.accent);
+
+  if (!hasMedia){
+    const g = ctx.createRadialGradient(W*0.25,H*0.15,0, W*0.25,H*0.15, W*0.7);
+    g.addColorStop(0,`rgba(${pRgb.r},${pRgb.g},${pRgb.b},0.10)`);
+    g.addColorStop(1,`rgba(${pRgb.r},${pRgb.g},${pRgb.b},0)`);
+    ctx.fillStyle = g; ctx.fillRect(0,0,W,H);
+
+    ctx.strokeStyle = `rgba(${pRgb.r},${pRgb.g},${pRgb.b},0.07)`;
+    ctx.lineWidth = 1;
+    const spacing = 90;
+    const offset = (t*30) % spacing;
+    for (let y=-spacing; y<H+spacing; y+=spacing){
+      const yy = y+offset; ctx.beginPath(); ctx.moveTo(0,yy); ctx.lineTo(W,yy); ctx.stroke();
+    }
+    for (let x=0; x<W; x+=160){ ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
+
+    particles.forEach(p => {
+      const y = ((p.y - t*p.speed) % (H+40) + (H+40)) % (H+40) - 20;
+      const twinkle = 0.3 + 0.7*Math.abs(Math.sin(t*1.2 + p.phase));
+      ctx.beginPath(); ctx.arc(p.x,y,p.r,0,Math.PI*2);
+      ctx.fillStyle = `rgba(${pRgb.r},${pRgb.g},${pRgb.b},${0.25*twinkle})`; ctx.fill();
+    });
+
+    const scanY = (t*140) % H;
+    const sg = ctx.createLinearGradient(0,scanY-2,0,scanY+2);
+    sg.addColorStop(0,`rgba(${aRgb.r},${aRgb.g},${aRgb.b},0)`);
+    sg.addColorStop(0.5,`rgba(${aRgb.r},${aRgb.g},${aRgb.b},0.10)`);
+    sg.addColorStop(1,`rgba(${aRgb.r},${aRgb.g},${aRgb.b},0)`);
+    ctx.fillStyle = sg; ctx.fillRect(0,scanY-2,W,4);
+  } else {
+    ctx.fillStyle = `rgba(4,7,12,${bgDim})`;
+    ctx.fillRect(0,0,W,H);
+  }
+
+  const vg = ctx.createRadialGradient(W/2,H/2,H*0.35, W/2,H/2,H*0.85);
+  vg.addColorStop(0,'rgba(0,0,0,0)');
+  vg.addColorStop(1,'rgba(0,0,0,0.55)');
+  ctx.fillStyle = vg; ctx.fillRect(0,0,W,H);
+}
+
+function drawLogo(){
+  if (!logoEl) return;
+  const maxW = W*0.16, maxH = H*0.08;
+  const ratio = Math.min(maxW/logoEl.naturalWidth, maxH/logoEl.naturalHeight);
+  const lw = logoEl.naturalWidth*ratio, lh = logoEl.naturalHeight*ratio;
+  const margin = W*0.035;
+  ctx.save(); ctx.globalAlpha = 0.85;
+  ctx.drawImage(logoEl, W-lw-margin, H-lh-margin, lw, lh);
+  ctx.restore();
+}
+
+// ============================================================ draw helpers
+function easeOutCubic(x){ return 1 - Math.pow(1-x, 3); }
+function easeOutBack(x){ const c1=1.70158, c3=c1+1; return 1+c3*Math.pow(x-1,3)+c1*Math.pow(x-1,2); }
+
+function fadeWindow(p, inFrac=0.18, outFrac=0.18){
+  if (p < inFrac) return easeOutCubic(p/inFrac);
+  if (p > 1-outFrac) return 1-easeOutCubic((p-(1-outFrac))/outFrac);
+  return 1;
+}
+function glowText(text,x,y,size,weight,color,opacity,glow=22,font='Inter',align='left'){
+  ctx.save(); ctx.globalAlpha=opacity;
+  ctx.font=`${weight} ${size}px "${font}"`;
+  ctx.textAlign=align; ctx.textBaseline='alphabetic';
+  ctx.shadowColor=color; ctx.shadowBlur=glow; ctx.fillStyle=color;
+  ctx.fillText(text,x,y); ctx.restore();
+}
+function plainText(text,x,y,size,weight,color,opacity,font='Inter',align='left'){
+  ctx.save(); ctx.globalAlpha=opacity;
+  ctx.font=`${weight} ${size}px "${font}"`;
+  ctx.textAlign=align; ctx.textBaseline='alphabetic';
+  ctx.fillStyle=color; ctx.fillText(text,x,y); ctx.restore();
+}
+function wrapText(text,maxWidth,font,size,weight){
+  ctx.save(); ctx.font=`${weight} ${size}px "${font}"`;
+  const words = text.split(' ');
+  const lines = [];
+  let cur = '';
+  for (const w of words){
+    const test = cur ? cur+' '+w : w;
+    if (ctx.measureText(test).width > maxWidth && cur){ lines.push(cur); cur=w; }
+    else cur = test;
+  }
+  if (cur) lines.push(cur);
+  ctx.restore();
+  return lines;
+}
+// shrink-to-fit: تقلّص حجم الخط حتى يتسع النص ضمن maxWidth (مع حد أدنى) لمنع الفيض الأفقي
+function fitFont(text, maxW, size, font, weight, minSize=14){
+  let s = size;
+  ctx.save();
+  while (s > minSize){
+    ctx.font = `${weight} ${s}px "${font}"`;
+    if (ctx.measureText(text).width <= maxW){ ctx.restore(); return s; }
+    s -= 2;
+  }
+  ctx.restore();
+  return Math.max(minSize, s);
+}
+function roundRect(ctx,x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);
+  ctx.arcTo(x+w,y,x+w,y+h,r);
+  ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r);
+  ctx.arcTo(x,y,x+w,y,r);
+  ctx.closePath();
+}
+function isRTL(){ return document.getElementById('langSel').value === 'rtl'; }
+function fontFor(){ return isRTL() ? 'Cairo' : 'Inter'; }
+function fontMono(){ return 'IBM Plex Mono'; }
+function textAlignBase(){ return isRTL() ? 'right' : 'left'; }
+
+function fmtNum(v, digits=1, suffix=''){
+  if (v==null || v==='' || isNaN(parseFloat(v))) return 'N/A';
+  return parseFloat(v).toFixed(digits)+suffix;
+}
+
+// ============================================================ scene renderers — GENERAL
+function sceneIntro(p, f){
+  const op = fadeWindow(p,0.25,0.2);
+  const rise = (1-easeOutCubic(Math.min(1,p/0.3)))*40;
+  const fp = fontFor();
+  const maxTitleW = W*0.86;
+  const titleSize = fitFont(f.title||'', maxTitleW, Math.min(96,W*0.08), fp, 900, 28);
+  glowText(f.title||'', W/2, H/2-20+rise, titleSize, 900, '#e8edf4', op, 30, fp, 'center');
+  if (f.subtitle) plainText(f.subtitle, W/2, H/2+50+rise, Math.min(30,W*0.028), 500, THEME.primary, op*0.95, fontMono(), 'center');
+  ctx.save(); ctx.globalAlpha=op; ctx.strokeStyle=THEME.primary; ctx.lineWidth=2;
+  const lw = Math.min(220,W*0.2)*easeOutCubic(Math.min(1,p/0.35));
+  ctx.beginPath(); ctx.moveTo(W/2-lw/2,H/2+80); ctx.lineTo(W/2+lw/2,H/2+80); ctx.stroke();
+  ctx.restore();
+}
+
+function sceneTitle(p, f){
+  const op = fadeWindow(p);
+  const fp = fontFor();
+  if (f.label) plainText((f.label||'').toUpperCase(), W/2, H/2-100, Math.min(24,W*0.024), 700, '#6b7789', op, fontMono(), 'center');
+  const maxTitleW = W*0.84;
+  const titleSize = fitFont(f.title||'', maxTitleW, Math.min(80,W*0.07), fp, 800, 24);
+  glowText(f.title||'', W/2, H/2+10, titleSize, 800, '#e8edf4', op, 26, fp, 'center');
+}
+
+function sceneBullet(p, f){
+  const op = fadeWindow(p);
+  const fp = fontFor();
+  const items = Array.isArray(f.items) ? f.items : [];
+  const titleSize = fitFont(f.title||'', W*0.84, Math.min(38,W*0.035), fp, 800, 18);
+  plainText(f.title||'', W/2, H*0.09, titleSize, 800, '#e8edf4', op, fp, 'center');
+  const startY = H*0.17;
+  const gap = Math.min(110, (H-startY-120)/Math.max(items.length,1));
+  const circleOffset = Math.min(540, W*0.26);
+  const textOffset = Math.min(490, W*0.235);
+  const numSize = Math.min(26, W*0.026);
+  const numR = Math.min(26, W*0.026);
+  const textSize = Math.min(34, W*0.034);
+  const lineH = Math.round(textSize*1.24);
+  const maxTextWidth = Math.max(200, W - textOffset - 70);
+  items.forEach((item,i) => {
+    const stagger = Math.min(1, Math.max(0, (p-0.1-i*0.08)/0.35));
+    const localOp = op*easeOutCubic(stagger);
+    const y = startY + i*gap;
+    ctx.save(); ctx.globalAlpha = localOp;
+    ctx.fillStyle = THEME.primary;
+    ctx.beginPath(); ctx.arc(isRTL()?W/2+circleOffset:W/2-circleOffset, y-8, numR, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#04121a'; ctx.font=`800 ${numSize}px "Inter"`; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(String(i+1), isRTL()?W/2+circleOffset:W/2-circleOffset, y-7);
+    ctx.restore();
+    const lines = wrapText(item, maxTextWidth, fp, textSize, 600);
+    lines.forEach((ln,li) => {
+      plainText(ln, isRTL()?W/2+textOffset:W/2-textOffset, y+li*lineH-8, textSize, 600, '#e8edf4', localOp, fp, textAlignBase());
+    });
+  });
+}
+
+function sceneStat(p, f){
+  const op = fadeWindow(p);
+  const countP = easeOutCubic(Math.min(1, p/0.5));
+  plainText((f.label||'').toUpperCase(), W/2, H/2-180, Math.min(26,W*0.026), 700, '#6b7789', op, fontMono(), 'center');
+  let displayVal = f.value || '';
+  const numeric = parseFloat(String(f.value).replace(/[^0-9.\-]/g,''));
+  if (!isNaN(numeric) && String(f.value).match(/[\d.]/)){
+    displayVal = (numeric*countP).toFixed(String(f.value).includes('.')?1:0);
+  }
+  const valText = displayVal + (f.unit ? ' '+f.unit : '');
+  const valSize = fitFont(valText, W*0.84, Math.min(140,W*0.12), fontMono(), 800, 30);
+  glowText(valText, W/2, H/2+40, valSize, 800, THEME.primary, op, 40, fontMono(), 'center');
+}
+
+function sceneComparison(p, f){
+  const op = fadeWindow(p);
+  const fp = fontFor();
+  const titleSize = fitFont(f.title||'', W*0.84, Math.min(36,W*0.033), fp, 800, 18);
+  plainText(f.title||'', W/2, H*0.085, titleSize, 800, '#e8edf4', op, fp, 'center');
+  const leftStagger = easeOutCubic(Math.min(1,p/0.4));
+  const rightStagger = easeOutCubic(Math.min(1,Math.max(0,(p-0.2)/0.4)));
+  const leftOp = op*leftStagger, rightOp = op*rightStagger;
+  // الجانبان + فراغ VS في الوسط: نحسب الأبعاد بحيث لا تتجاوز عرض الـ canvas
+  const vsGap = W*0.05;
+  const cardW = Math.min(420, W*0.37), cardH = Math.min(580, H*0.34);
+  const totalRow = cardW*2 + vsGap;
+  // إن لم يتسع الصف عرضاً، قلّص البطاقات
+  const fit = totalRow > W*0.92 ? (W*0.92-vsGap)/2 : cardW;
+  const cw = Math.max(120, fit);
+  const leftX = W/2 - cw - vsGap/2;
+  const rightX = W/2 + vsGap/2;
+  const cardY = H/2 - cardH/2 + H*0.04;
+  drawCompCard(leftX, cardY, cw, cardH, f.left_label, f.left_value, THEME.primary, leftOp);
+  drawCompCard(rightX, cardY, cw, cardH, f.right_label, f.right_value, THEME.accent, rightOp);
+  ctx.save(); ctx.globalAlpha = op;
+  ctx.font=`900 ${Math.min(56,W*0.05)}px "Inter"`; ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillStyle='#6b7789'; ctx.fillText('VS', W/2, cardY+cardH/2);
+  ctx.restore();
+}
+
+function drawCompCard(x,y,w,h,label,value,color,opacity){
+  ctx.save(); ctx.globalAlpha = opacity;
+  roundRect(ctx,x,y,w,h,16); ctx.strokeStyle=color; ctx.lineWidth=2; ctx.stroke();
+  ctx.fillStyle='rgba(0,0,0,0.3)'; ctx.fill();
+  const labelSize = Math.min(26, w*0.062);
+  plainText(label||'', x+w/2, y+labelSize*2.4, labelSize, 700, '#6b7789', 1, fontFor(), 'center');
+  const valSize = Math.min(52, w*0.124);
+  const lines = wrapText(value||'', w-60, fontMono(), valSize, 700);
+  const lh = Math.round(valSize*1.15);
+  lines.forEach((ln,i) => {
+    plainText(ln, x+w/2, y+h/2+i*lh, valSize, 700, color, 1, fontMono(), 'center');
+  });
+  ctx.restore();
+}
+
+function sceneQuote(p, f){
+  const op = fadeWindow(p,0.2,0.2);
+  const fp = fontFor();
+  const barX = W/2 - W*0.42;
+  ctx.save(); ctx.globalAlpha=op; ctx.strokeStyle=THEME.primary; ctx.lineWidth=4;
+  ctx.beginPath(); ctx.moveTo(barX,H/2-120); ctx.lineTo(barX,H/2+60); ctx.stroke();
+  ctx.restore();
+  const wrapW = Math.min(900, W*0.78);
+  const quoteSize = Math.min(44, W*0.044);
+  const lines = wrapText(f.text||'', wrapW, fp, quoteSize, 600);
+  const lineH = Math.round(quoteSize*1.27);
+  lines.forEach((ln,i) => {
+    plainText(ln, W/2, H/2-60+i*lineH, quoteSize, 600, '#e8edf4', op, fp, 'center');
+  });
+  if (f.author) plainText('— ' + f.author, W/2, H/2+lines.length*lineH-20, Math.min(28,W*0.028), 600, THEME.primary, op, fontMono(), 'center');
+}
+
+function sceneOutro(p, f){
+  const op = fadeWindow(p,0.2,0.3);
+  const fp = fontFor();
+  const titleSize = fitFont(f.title||'', W*0.86, Math.min(56,W*0.05), fp, 800, 20);
+  glowText(f.title||'', W/2, H/2-10, titleSize, 800, '#e8edf4', op, 24, fp, 'center');
+  if (f.subtitle) plainText(f.subtitle||'', W/2, H/2+55, Math.min(24,W*0.024), 500, THEME.primary, op*0.9, fontMono(), 'center');
+}
+
+// ============================================================ scene renderers — BENCHMARK
+function drawBadge(text, x, y, color, fontSize=22){
+  ctx.save();
+  ctx.font = `600 ${fontSize}px "IBM Plex Mono"`;
+  const paddingX = fontSize;
+  const w = ctx.measureText(text).width + paddingX*2;
+  const h = fontSize*2.1;
+  ctx.strokeStyle = color; ctx.lineWidth = 1.5;
+  roundRect(ctx, x, y, w, h, 8); ctx.stroke();
+  ctx.fillStyle = color; ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText(text, x+w/2, y+h/2+1);
+  ctx.restore();
+}
+
+function sceneBenchmarkModel(p, f){
+  const op = fadeWindow(p);
+  plainText('NOW BENCHMARKING', W/2, H/2-140, Math.min(22,W*0.022), 700, '#6b7789', op, fontMono(), 'center');
+  const modelText = f.model||'';
+  const modelSize = fitFont(modelText, W*0.84, Math.min(72,W*0.065), fontFor(), 800, 22);
+  glowText(modelText, W/2, H/2-40, modelSize, 800, '#e8edf4', op, 26, fontFor(), 'center');
+  ctx.save(); ctx.globalAlpha = op;
+  const badgeY = H/2+40;
+  // center two badges; shrink-to-fit so they never overflow horizontally
+  const gpuText = f.gpu||'';
+  const backendText = f.backend||'';
+  let badgeSize = Math.min(22, W*0.022);
+  const maxBadgeRow = W*0.86;
+  // measure combined width, shrink font until it fits
+  while (badgeSize > 12){
+    ctx.font = `600 ${badgeSize}px "IBM Plex Mono"`;
+    const gpuW = ctx.measureText(gpuText).width + badgeSize*2;
+    const beW = ctx.measureText(backendText).width + badgeSize*2;
+    if (gpuW + beW + 30 <= maxBadgeRow) break;
+    badgeSize -= 1;
+  }
+  ctx.font = `600 ${badgeSize}px "IBM Plex Mono"`;
+  const gpuW = ctx.measureText(gpuText).width + badgeSize*2;
+  const beW = ctx.measureText(backendText).width + badgeSize*2;
+  const totalW = gpuW + beW + 30;
+  const startX = W/2 - totalW/2;
+  drawBadge(gpuText, startX, badgeY, THEME.primary, badgeSize);
+  drawBadge(backendText, startX + gpuW + 30, badgeY, THEME.accent, badgeSize);
+  ctx.restore();
+}
+
+function sceneBenchmarkHero(p, f){
+  const op = fadeWindow(p);
+  const countP = easeOutCubic(Math.min(1, p/0.55));
+  const tps = (f.avg_tokens_per_sec!=null && f.avg_tokens_per_sec!=='') ? parseFloat(f.avg_tokens_per_sec)*countP : null;
+  const ttft = (f.avg_ttft_s!=null && f.avg_ttft_s!=='') ? parseFloat(f.avg_ttft_s)*countP : null;
+
+  const modelSize = fitFont(f.model||'', W*0.82, Math.min(26,W*0.024), fontMono(), 600, 16);
+  plainText(f.model||'', W/2, H/2-260, modelSize, 600, '#6b7789', op, fontMono(), 'center');
+
+  // عمودان جانباً عن المركز بمسافة نسبية لا تخرج من العرض
+  const colOffset = Math.min(W*0.2, (W/2)*0.6);
+  plainText('AVG TOKENS / SEC', W/2-colOffset, H/2-140, Math.min(22,W*0.022), 700, '#6b7789', op, fontFor(), 'center');
+  glowText(fmtNum(tps,1), W/2-colOffset, H/2-30, Math.min(130,W*0.12), 800, THEME.primary, op, 40, fontMono(), 'center');
+
+  plainText('TIME TO FIRST TOKEN', W/2+colOffset, H/2-140, Math.min(22,W*0.022), 700, '#6b7789', op, fontFor(), 'center');
+  glowText(fmtNum(ttft,2,'s'), W/2+colOffset, H/2-30, Math.min(130,W*0.12), 800, THEME.accent, op, 40, fontMono(), 'center');
+
+  ctx.save(); ctx.globalAlpha = op*0.5; ctx.strokeStyle = '#1e2530';
+  ctx.beginPath(); ctx.moveTo(W/2,H/2-190); ctx.lineTo(W/2,H/2+20); ctx.stroke();
+  ctx.restore();
+}
+
+function sceneBenchmarkSecondary(p, f){
+  const op = fadeWindow(p);
+  plainText((f.model||'') + '  —  detailed telemetry', W/2, 170, Math.min(30,W*0.028), 700, '#e8edf4', op, fontFor(), 'center');
+
+  const stats = [
+    ['GPU UTIL (AVG / PEAK)', `${fmtNum(f.avg_gpu_util_pct,0,'%')} / ${fmtNum(f.peak_gpu_util_pct,0,'%')}`],
+    ['VRAM PEAK', fmtNum(f.peak_vram_mb,0,' MB')],
+    ['GPU TEMP (AVG / PEAK)', `${fmtNum(f.avg_gpu_temp_c,0,'°C')} / ${fmtNum(f.peak_gpu_temp_c,0,'°C')}`],
+    ['GPU POWER (AVG)', fmtNum(f.avg_gpu_power_w,0,' W')],
+    ['CPU AVG', fmtNum(f.avg_cpu_pct,0,'%')],
+    ['RAM PEAK', fmtNum(f.peak_ram_mb,0,' MB')],
+  ];
+  const cols = 3, colW = Math.min(520, W*0.27), rowH = 150;
+  const startX = W/2 - (cols*colW)/2 + colW/2;
+  const startY = Math.max(380, H*0.2);
+  stats.forEach((s,i) => {
+    const col = i%cols, row = Math.floor(i/cols);
+    const stagger = Math.min(1, Math.max(0, (p-0.15-i*0.05)/0.4));
+    const localOp = op*easeOutCubic(stagger);
+    const rise = (1-easeOutCubic(stagger))*24;
+    const x = startX + col*colW, y = startY + row*rowH + rise;
+    plainText(s[0], x, y, 18, 700, '#6b7789', localOp, fontFor(), 'center');
+    plainText(s[1], x, y+46, 34, 600, '#e8edf4', localOp, fontMono(), 'center');
+  });
+}
+
+function sceneBenchmarkLeaderboard(p, f){
+  const op = fadeWindow(p, 0.12, 0.15);
+  plainText('TOKENS / SEC — RESULTS', W/2, 150, Math.min(34,W*0.032), 800, '#e8edf4', op, fontFor(), 'center');
+
+  let lbReports = [];
+  try { lbReports = typeof f.reports === 'string' ? JSON.parse(f.reports) : (f.reports||[]); }
+  catch(e){ lbReports = []; }
+  if (!lbReports.length) return;
+
+  const sorted = [...lbReports].sort((a,b) => (parseFloat(b.avg_tokens_per_sec)||0)-(parseFloat(a.avg_tokens_per_sec)||0));
+  const maxTps = Math.max(...sorted.map(r=>parseFloat(r.avg_tokens_per_sec)||0), 1);
+  const barMaxW = Math.min(820, W*0.62), barH = 64, gap = 26;
+  const totalH = sorted.length*(barH+gap)-gap;
+  const startY = H/2 - totalH/2 + 40;
+  const startX = W/2 - barMaxW/2 - 60;  // shift left so the number fits on the right
+
+  sorted.forEach((r,i) => {
+    const stagger = Math.min(1, Math.max(0, (p-0.15-i*0.12)/0.5));
+    const growP = easeOutCubic(stagger);
+    const localOp = op*Math.min(1,stagger*3);
+    const y = startY + i*(barH+gap);
+    const w = barMaxW * ((parseFloat(r.avg_tokens_per_sec)||0)/maxTps) * growP;
+    const isFirst = i===0;
+    const barColor = isFirst ? THEME.primary : '#2a3441';
+    ctx.save(); ctx.globalAlpha = localOp;
+    roundRect(ctx, startX, y, Math.max(2,w), barH, 8);
+    ctx.fillStyle = barColor;
+    if (isFirst){ ctx.shadowColor=THEME.primary; ctx.shadowBlur=24; }
+    ctx.fill();
+    ctx.restore();
+
+    plainText(`${r.model||''}  ·  ${r.gpu||''}`, startX, y-10, 18, 600, '#8b949e', localOp, fontMono(), 'left');
+    // count-up: number animates from 0 to final value as the bar grows
+    const finalTps = parseFloat(r.avg_tokens_per_sec)||0;
+    const shownTps = finalTps * growP;
+    plainText(fmtNum(shownTps,1,' tok/s'), startX + Math.max(2,w) + 16, y+barH/2+7, 24, 700,
+               isFirst ? THEME.primary : '#e8edf4', localOp, fontMono(), 'left');
+  });
+}
+
+// ============================================================ timeline + playback
+let timeline = [];
+
+function buildTimeline(){
+  const pace = parseFloat(document.getElementById('paceSel').value);
+  timeline = scenes.map(s => ({
+    id: s.id,
+    type: s.type,
+    dur: s.dur * pace,
+    fields: s.fields,
+    label: `${s.type}`,
+  }));
+  const total = timeline.reduce((a,s)=>a+s.dur,0);
+  document.getElementById('sceneLabel').textContent =
+    timeline.length ? `${timeline.length} scenes · ${total.toFixed(1)}s` : 'no scenes yet';
+  const noteEl = document.getElementById('durationNote');
+  if (noteEl){
+    const warn = total > 30;
+    noteEl.textContent = `${total.toFixed(1)}s total` + (warn ? ' — longer than the ~15–30s sweet spot for Reels/TikTok' : '');
+    noteEl.style.color = warn ? 'var(--amber)' : 'var(--dim2)';
+  }
+}
+
+function drawScene(type, p, fields){
+  const DISPATCH = {
+    intro: sceneIntro, title: sceneTitle, bullet: sceneBullet, stat: sceneStat,
+    comparison: sceneComparison, quote: sceneQuote, outro: sceneOutro,
+    benchmark_model: sceneBenchmarkModel, benchmark_hero: sceneBenchmarkHero,
+    benchmark_secondary: sceneBenchmarkSecondary, benchmark_leaderboard: sceneBenchmarkLeaderboard,
+  };
+  const fn = DISPATCH[type];
+  if (fn) fn(p, fields);
+}
+
+function totalDuration(){ return timeline.reduce((a,s)=>a+s.dur,0); }
+
+function drawCaptions(type, fields, p){
+  if (!document.getElementById('captionsChk').checked) return;
+  const text = sceneSpeakableText(type, fields);
+  const words = text.split(/\s+/).filter(Boolean);
+  if (!words.length) return;
+  const idx = Math.min(words.length-1, Math.floor(p*words.length));
+  const from = Math.max(0, idx-1), to = Math.min(words.length, idx+2);
+  const chunk = words.slice(from, to);
+  const y = H*0.86;
+  ctx.save();
+  ctx.font = `800 ${Math.round(W*0.052)}px "${fontFor()}"`;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  const widths = chunk.map(w => ctx.measureText(w).width);
+  const totalW = widths.reduce((a,b)=>a+b,0) + (chunk.length-1)*14;
+  let x = W/2 - totalW/2;
+  chunk.forEach((w,i) => {
+    const isCurrent = (from+i)===idx;
+    const ww = widths[i];
+    if (isCurrent){
+      ctx.save();
+      roundRect(ctx, x-10, y-Math.round(W*0.052)/2-8, ww+20, Math.round(W*0.052)+16, 8);
+      ctx.fillStyle = THEME.primary; ctx.globalAlpha = 0.92; ctx.fill();
+      ctx.restore();
+      ctx.fillStyle = '#04121a';
+    } else {
+      ctx.fillStyle = 'rgba(232,237,244,0.55)';
+    }
+    ctx.textAlign = 'left';
+    ctx.fillText(w, x, y);
+    x += ww + 14;
+  });
+  ctx.restore();
+}
+
+function drawAtTime(elapsed){
+  if (!timeline.length){ drawBackground(elapsed); plainText('Add scenes to begin', W/2, H/2, 34, 600, '#48505e', 1, 'Inter', 'center'); drawLogo(); return; }
+  let acc = 0;
+  let current = timeline[timeline.length-1];
+  let p = 1;
+  for (const scene of timeline){
+    if (elapsed < acc+scene.dur){
+      current = scene;
+      p = (elapsed-acc)/scene.dur;
+      break;
+    }
+    acc += scene.dur;
+  }
+  drawBackground(elapsed, current.id);
+  drawScene(current.type, p, current.fields);
+  drawCaptions(current.type, current.fields, p);
+  document.getElementById('sceneLabel').textContent = current.label;
+  drawLogo();
+  if (document.getElementById('watermarkChk').checked){
+    ctx.save(); ctx.globalAlpha = 0.65;
+    ctx.font = '700 20px "IBM Plex Mono"'; ctx.textAlign = 'left'; ctx.textBaseline='bottom';
+    ctx.fillStyle = '#e8edf4';
+    ctx.fillText('Made with AI Reel Studio', W*0.035, H-H*0.02);
+    ctx.restore();
+  }
+}
+
+// ============================================================ transport
+async function ensureFontsReady(){
+  try {
+    await document.fonts.load('800 96px Inter');
+    await document.fonts.load('700 22px "IBM Plex Mono"');
+    await document.fonts.load('800 96px Cairo');
+    await document.fonts.ready;
+  } catch(e){}
+}
+
+function sceneSpeakableText(type, f){
+  if (type==='intro') return [f.title, f.subtitle].filter(Boolean).join('. ');
+  if (type==='title') return [f.label, f.title].filter(Boolean).join('. ');
+  if (type==='bullet') return [f.title, ...(Array.isArray(f.items)?f.items:[])].filter(Boolean).join('. ');
+  if (type==='stat') return [f.label, f.value, f.unit].filter(Boolean).join(' ');
+  if (type==='comparison') return [f.title, f.left_label, f.left_value, 'versus', f.right_label, f.right_value].filter(Boolean).join(' ');
+  if (type==='quote') return [f.text, f.author].filter(Boolean).join('. ');
+  if (type==='outro') return [f.title, f.subtitle].filter(Boolean).join('. ');
+  if (type==='benchmark_model') return [f.model, f.gpu, f.backend].filter(Boolean).join(' ');
+  if (type==='benchmark_hero') return [f.model, fmtNum(parseFloat(f.avg_tokens_per_sec),1),'tokens per second'].filter(Boolean).join(' ');
+  return '';
+}
+let lastSpokenIdx = -1;
+
+document.getElementById('playBtn').addEventListener('click', async () => {
+  if (!timeline.length) buildTimeline();
+  if (!timeline.length){ alert('Add scenes first (generate or manually).'); return; }
+  await ensureFontsReady();
+  playing = true; loopMode = true; animStart = null;
+  lastSpokenIdx = -1;
+  window.speechSynthesis?.cancel();
+  document.getElementById('playBtn').disabled = true;
+  document.getElementById('stopBtn').disabled = false;
+  requestAnimationFrame(frame);
+});
+
+document.getElementById('stopBtn').addEventListener('click', stopPlayback);
+
+function stopPlayback(){
+  playing = false; animStart = null;
+  window.speechSynthesis?.cancel();
+  document.getElementById('playBtn').disabled = false;
+  document.getElementById('stopBtn').disabled = true;
+  document.getElementById('progressFill').style.width = '0%';
+}
+
+function frame(now){
+  if (!playing) return;
+  if (animStart===null) animStart = now;
+  let elapsed = (now-animStart)/1000;
+  const total = totalDuration();
+  if (elapsed >= total){
+    if (loopMode && !recording){ animStart = now; elapsed = 0; lastSpokenIdx = -1; }
+    else { drawAtTime(total-0.001); stopPlayback(); if (recording) finishRecording(); return; }
+  }
+  drawAtTime(elapsed);
+  document.getElementById('progressFill').style.width = (elapsed/total*100)+'%';
+
+  if (!recording && document.getElementById('ttsPreviewChk').checked && window.speechSynthesis){
+    let acc = 0, idx = -1;
+    for (let i=0;i<timeline.length;i++){ if (elapsed < acc+timeline[i].dur){ idx = i; break; } acc += timeline[i].dur; }
+    if (idx !== -1 && idx !== lastSpokenIdx){
+      lastSpokenIdx = idx;
+      const text = sceneSpeakableText(timeline[idx].type, timeline[idx].fields);
+      if (text){
+        window.speechSynthesis.cancel();
+        const u = new SpeechSynthesisUtterance(text);
+        u.lang = isRTL() ? 'ar-SA' : 'en-US';
+        window.speechSynthesis.speak(u);
+      }
+    }
+  }
+  requestAnimationFrame(frame);
+}
+
+// ============================================================ built-in generated music
+const SYNTH_PRESETS = {
+  'Ambient Pad':      {type:'ambient'},
+  'Upbeat Pulse':     {type:'pulse'},
+  'Lo-fi Drone':      {type:'lofi'},
+  'Cinematic Swell':  {type:'cinematic'},
+};
+
+function startSynthPatch(actx, dest, presetKey, volume){
+  const preset = SYNTH_PRESETS[presetKey];
+  if (!preset) return () => {};
+  const master = actx.createGain();
+  master.gain.value = volume;
+  master.connect(dest);
+  const nodes = [];
+
+  if (preset.type==='ambient'){
+    [220, 277, 330].forEach((freq,i) => {
+      const osc = actx.createOscillator(); osc.type='sine'; osc.frequency.value = freq;
+      const g = actx.createGain(); g.gain.value = 0.18;
+      const lfo = actx.createOscillator(); lfo.frequency.value = 0.05+i*0.02;
+      const lfoGain = actx.createGain(); lfoGain.gain.value = 0.08;
+      lfo.connect(lfoGain).connect(g.gain);
+      osc.connect(g).connect(master);
+      osc.start(); lfo.start();
+      nodes.push(osc, lfo);
+    });
+  } else if (preset.type==='pulse'){
+    const osc = actx.createOscillator(); osc.type='square'; osc.frequency.value = 110;
+    const g = actx.createGain(); g.gain.value = 0;
+    const lfo = actx.createOscillator(); lfo.type='square'; lfo.frequency.value = 2.5;
+    const lfoGain = actx.createGain(); lfoGain.gain.value = 0.22;
+    lfo.connect(lfoGain).connect(g.gain);
+    const filt = actx.createBiquadFilter(); filt.type='lowpass'; filt.frequency.value = 900;
+    osc.connect(filt).connect(g).connect(master);
+    osc.start(); lfo.start();
+    nodes.push(osc, lfo);
+  } else if (preset.type==='lofi'){
+    const osc = actx.createOscillator(); osc.type='triangle'; osc.frequency.value = 146.8;
+    const g = actx.createGain(); g.gain.value = 0.22;
+    const filt = actx.createBiquadFilter(); filt.type='lowpass'; filt.frequency.value = 700;
+    const lfo = actx.createOscillator(); lfo.frequency.value = 0.15;
+    const lfoGain = actx.createGain(); lfoGain.gain.value = 80;
+    lfo.connect(lfoGain).connect(filt.frequency);
+    osc.connect(filt).connect(g).connect(master);
+    osc.start(); lfo.start();
+    nodes.push(osc, lfo);
+  } else if (preset.type==='cinematic'){
+    const osc = actx.createOscillator(); osc.type='sine'; osc.frequency.value = 130;
+    const g = actx.createGain(); g.gain.value = 0.001;
+    g.gain.linearRampToValueAtTime(0.22, actx.currentTime + 3);
+    const delay = actx.createDelay(); delay.delayTime.value = 0.45;
+    const fb = actx.createGain(); fb.gain.value = 0.35;
+    delay.connect(fb).connect(delay);
+    osc.connect(g); g.connect(master); g.connect(delay); delay.connect(master);
+    osc.start();
+    nodes.push(osc);
+  }
+
+  return () => { nodes.forEach(n => { try{ n.stop(); }catch(e){} }); };
+}
+
+// ============================================================ audio mixing for export
+function buildMixedAudioTrack(){
+  if (musicMode==='none' && !voiceoverBlob) return { track:null, cleanup:()=>{} };
+  const AC = window.AudioContext || window.webkitAudioContext;
+  const actx = new AC();
+  const dest = actx.createMediaStreamDestination();
+  const cleanupFns = [];
+
+  if (musicMode==='upload' && musicEl){
+    musicEl.currentTime = 0;
+    const src = actx.createMediaElementSource(musicEl);
+    const gain = actx.createGain();
+    gain.gain.value = parseFloat(document.getElementById('musicVolume').value || '0.5');
+    src.connect(gain).connect(dest);
+    musicEl.loop = true;
+    musicEl.play().catch(()=>{});
+    cleanupFns.push(() => { musicEl.pause(); });
+  } else if (musicMode==='synth' && synthPreset){
+    const vol = parseFloat(document.getElementById('musicVolume').value || '0.5');
+    const stop = startSynthPatch(actx, dest, synthPreset, vol);
+    cleanupFns.push(stop);
+  }
+  if (voiceoverBlob){
+    const voEl = new Audio(URL.createObjectURL(voiceoverBlob));
+    const src2 = actx.createMediaElementSource(voEl);
+    const gain2 = actx.createGain();
+    gain2.gain.value = 1.0;
+    src2.connect(gain2).connect(dest);
+    voEl.play().catch(()=>{});
+    cleanupFns.push(() => { voEl.pause(); });
+  }
+
+  return { track: dest.stream.getAudioTracks()[0], cleanup: () => { cleanupFns.forEach(fn=>fn()); actx.close().catch(()=>{}); } };
+}
+
+// ============================================================ ffmpeg (client-side mp4 conversion)
+let ffmpegInstance = null;
+async function getFfmpeg(){
+  if (!window.FFmpeg) throw new Error('ffmpeg.wasm did not load (no internet access?).');
+  if (!ffmpegInstance){
+    ffmpegInstance = window.FFmpeg.createFFmpeg({
+      log:false, mainName:'main',
+      corePath:'https://unpkg.com/@ffmpeg/core-st@0.11.1/dist/ffmpeg-core.js',
+    });
+  }
+  if (!ffmpegInstance.isLoaded()) await ffmpegInstance.load();
+  return ffmpegInstance;
+}
+async function convertWebmToMp4(webmBlob, filenamePrefix){
+  const ff = await getFfmpeg();
+  const wrap = document.getElementById('convertProgressWrap');
+  const fill = document.getElementById('convertProgressFill');
+  wrap.style.display = 'block'; fill.style.width = '0%';
+  ff.setProgress(({ratio}) => { fill.style.width = Math.max(0,Math.min(100,ratio*100)) + '%'; });
+  const inName = 'in.webm', outName = 'out.mp4';
+  ff.FS('writeFile', inName, await window.FFmpeg.fetchFile(webmBlob));
+  await ff.run('-i', inName, '-c:v', 'libx264', '-preset', 'veryfast', '-pix_fmt', 'yuv420p', '-c:a', 'aac', outName);
+  const data = ff.FS('readFile', outName);
+  try { ff.FS('unlink', inName); ff.FS('unlink', outName); } catch(e){}
+  wrap.style.display = 'none';
+  const mp4Blob = new Blob([data.buffer], {type:'video/mp4'});
+  downloadBlob(mp4Blob, `${filenamePrefix}.mp4`);
+  return mp4Blob;
+}
+
+function downloadBlob(blob, filename){
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename; a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+}
+
+function recordAndExport(filenamePrefix, statusEl){
+  return new Promise(async (resolve, reject) => {
+    if (recording){ reject(new Error('Already recording.')); return; }
+    if (!timeline.length){ reject(new Error('No scenes to export.')); return; }
+    await ensureFontsReady();
+
+    const videoStream = canvas.captureStream(30);
+    const { track: audioTrack, cleanup: cleanupAudio } = buildMixedAudioTrack();
+    if (audioTrack) videoStream.addTrack(audioTrack);
+
+    let mimeType = 'video/webm;codecs=vp9,opus';
+    if (!MediaRecorder.isTypeSupported(mimeType)) mimeType = 'video/webm;codecs=vp8,opus';
+    if (!MediaRecorder.isTypeSupported(mimeType)) mimeType = 'video/webm';
+
+    recordedChunks = [];
+    mediaRecorder = new MediaRecorder(videoStream, {mimeType, videoBitsPerSecond:12000000});
+    mediaRecorder.ondataavailable = (e) => { if (e.data.size>0) recordedChunks.push(e.data); };
+    mediaRecorder.onstop = async () => {
+      cleanupAudio();
+      const blob = new Blob(recordedChunks, {type:'video/webm'});
+      downloadBlob(blob, `${filenamePrefix}.webm`);
+      if (statusEl) statusEl.textContent = '✓ WebM downloaded.';
+
+      const wantMp4 = document.getElementById('mp4Chk').checked;
+      if (wantMp4){
+        if (statusEl) statusEl.textContent = '⏳ Converting to MP4 locally...';
+        try {
+          await convertWebmToMp4(blob, filenamePrefix);
+          if (statusEl) statusEl.textContent = '✓ Export complete — WebM + MP4 downloaded.';
+        } catch(e){
+          if (statusEl) statusEl.textContent = '✓ WebM downloaded. MP4 conversion failed (' + e.message + ').';
+        }
+      }
+      resolve(blob);
+    };
+
+    recording = true; playing = true; loopMode = false; animStart = null;
+    document.getElementById('recBadge').classList.add('show');
+    document.getElementById('recordBtn').classList.add('active');
+    document.getElementById('recordBtn').disabled = true;
+    document.getElementById('playBtn').disabled = true;
+    if (statusEl) statusEl.textContent = 'Recording… will finish automatically at end of reel.';
+
+    drawAtTime(0);
+    mediaRecorder.start();
+    requestAnimationFrame(frame);
+  });
+}
+
+function finishRecording(){
+  recording = false;
+  if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
+  document.getElementById('recBadge').classList.remove('show');
+  document.getElementById('recordBtn').classList.remove('active');
+  document.getElementById('recordBtn').disabled = false;
+  document.getElementById('playBtn').disabled = false;
+}
+
+document.getElementById('recordBtn').addEventListener('click', () => {
+  if (!timeline.length) buildTimeline();
+  const statusEl = document.getElementById('statusNote');
+  recordAndExport(`ai_reel_${Date.now()}`, statusEl).catch(e => { statusEl.textContent = 'Error: ' + e.message; });
+});
+
+// ============================================================ background media wiring
+document.getElementById('bgUpload').addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const statusEl = document.getElementById('bgStatus');
+  const url = URL.createObjectURL(file);
+  const isVideo = file.type.startsWith('video/');
+  bgMediaReady = false;
+
+  if (isVideo){
+    const vid = document.createElement('video');
+    vid.src = url; vid.loop = true; vid.muted = true; vid.playsInline = true;
+    vid.addEventListener('loadeddata', () => {
+      bgMediaEl = vid; bgMediaType = 'video'; bgMediaReady = true;
+      vid.play().catch(()=>{});
+      statusEl.textContent = `✓ Video background loaded: ${file.name}`;
+      drawAtTime(0);
+    });
+    vid.addEventListener('error', () => { statusEl.textContent = 'Could not load video.'; });
+  } else {
+    const img = new Image();
+    img.onload = () => {
+      bgMediaEl = img; bgMediaType = 'image'; bgMediaReady = true;
+      statusEl.textContent = `✓ Image background loaded: ${file.name}`;
+      drawAtTime(0);
+    };
+    img.onerror = () => { statusEl.textContent = 'Could not load image.'; };
+    img.src = url;
+  }
+});
+
+document.getElementById('bgClearBtn').addEventListener('click', () => {
+  if (bgMediaEl && bgMediaType==='video'){ bgMediaEl.pause(); }
+  bgMediaEl = null; bgMediaType = null; bgMediaReady = false;
+  document.getElementById('bgUpload').value = '';
+  document.getElementById('bgStatus').textContent = 'No background — using default animated gradient.';
+  drawAtTime(0);
+});
+document.getElementById('bgPanX').addEventListener('input', (e) => { bgPanX = e.target.value/100; drawAtTime(0); });
+document.getElementById('bgPanY').addEventListener('input', (e) => { bgPanY = e.target.value/100; drawAtTime(0); });
+document.getElementById('bgScale').addEventListener('input', (e) => { bgScale = e.target.value/100; drawAtTime(0); });
+document.getElementById('bgDim').addEventListener('input', (e) => { bgDim = e.target.value/100; drawAtTime(0); });
+
+// ============================================================ brand kit wiring
+function renderTemplateSwatches(){
+  const row = document.getElementById('tplRow');
+  row.innerHTML = '';
+  TEMPLATES.forEach(t => {
+    const btn = document.createElement('button');
+    btn.className = 'tpl-swatch';
+    btn.textContent = t.name;
+    btn.style.background = `linear-gradient(135deg, ${t.primary}, ${t.accent})`;
+    btn.addEventListener('click', () => {
+      THEME.primary = t.primary; THEME.accent = t.accent;
+      document.getElementById('brandPrimary').value = t.primary;
+      document.getElementById('brandAccent').value = t.accent;
+      document.getElementById('brandStatus').textContent = `Template: ${t.name}`;
+      saveBrandKit(); drawAtTime(0);
+    });
+    row.appendChild(btn);
+  });
+}
+document.getElementById('brandPrimary').addEventListener('input', (e) => {
+  THEME.primary = e.target.value;
+  document.getElementById('brandStatus').textContent = 'Custom colors.';
+  saveBrandKit(); drawAtTime(0);
+});
+document.getElementById('brandAccent').addEventListener('input', (e) => {
+  THEME.accent = e.target.value;
+  document.getElementById('brandStatus').textContent = 'Custom colors.';
+  saveBrandKit(); drawAtTime(0);
+});
+document.getElementById('logoUpload').addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const img = new Image();
+  img.onload = () => { logoEl = img; drawAtTime(0); };
+  img.src = URL.createObjectURL(file);
+});
+document.getElementById('logoClearBtn').addEventListener('click', () => {
+  logoEl = null; document.getElementById('logoUpload').value = ''; drawAtTime(0);
+});
+
+// ============================================================ audio wiring
+function renderSynthMusicRow(){
+  const row = document.getElementById('synthMusicRow');
+  row.innerHTML = '';
+  const noneBtn = document.createElement('button');
+  noneBtn.className = 'tpl-swatch'; noneBtn.textContent = 'None';
+  noneBtn.style.background = '#1a2028';
+  noneBtn.addEventListener('click', () => {
+    musicMode = 'none'; synthPreset = null;
+    document.getElementById('voStatus').textContent = 'No music selected.';
+    highlightSynthRow(null);
+  });
+  row.appendChild(noneBtn);
+  Object.keys(SYNTH_PRESETS).forEach(name => {
+    const btn = document.createElement('button');
+    btn.className = 'tpl-swatch'; btn.textContent = name;
+    btn.style.background = 'linear-gradient(135deg,#2a3340,#1a2028)';
+    btn.dataset.preset = name;
+    btn.addEventListener('click', () => {
+      musicMode = 'synth'; synthPreset = name;
+      musicFile = null; musicEl = null;
+      document.getElementById('musicUpload').value = '';
+      document.getElementById('voStatus').textContent = `Music: generated "${name}" (royalty-free).`;
+      highlightSynthRow(name);
+    });
+    row.appendChild(btn);
+  });
+}
+function highlightSynthRow(activeName){
+  document.querySelectorAll('#synthMusicRow .tpl-swatch').forEach(b => {
+    b.style.outline = (b.dataset.preset===activeName) ? `2px solid ${THEME.primary}` : 'none';
+  });
+}
+
+document.getElementById('musicUpload').addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  musicFile = file; musicMode = 'upload'; synthPreset = null;
+  musicEl = new Audio(URL.createObjectURL(file));
+  musicEl.loop = true;
+  document.getElementById('voStatus').textContent = `Music: ${file.name} loaded.`;
+  highlightSynthRow(null);
+});
+document.getElementById('musicClearBtn').addEventListener('click', () => {
+  musicFile = null; musicEl = null; musicMode = 'none'; synthPreset = null;
+  document.getElementById('musicUpload').value = '';
+  document.getElementById('voStatus').textContent = 'No music selected.';
+  highlightSynthRow(null);
+});
+
+document.getElementById('voRecordBtn').addEventListener('click', async () => {
+  try {
+    voStream = await navigator.mediaDevices.getUserMedia({ audio:true });
+  } catch(e){
+    document.getElementById('voStatus').textContent = 'Microphone access denied or unavailable.';
+    return;
+  }
+  voChunks = [];
+  voRecorder = new MediaRecorder(voStream);
+  voRecorder.ondataavailable = (e) => { if (e.data.size>0) voChunks.push(e.data); };
+  voRecorder.onstop = () => {
+    voiceoverBlob = new Blob(voChunks, {type:'audio/webm'});
+    const preview = document.getElementById('voPreview');
+    preview.src = URL.createObjectURL(voiceoverBlob);
+    preview.style.display = 'block';
+    document.getElementById('voStatus').textContent = '✓ Voiceover recorded. It will be mixed into the exported video.';
+    voStream.getTracks().forEach(t => t.stop());
+  };
+  voRecorder.start();
+  document.getElementById('voRecordBtn').disabled = true;
+  document.getElementById('voStopBtn').disabled = false;
+  document.getElementById('voStatus').textContent = '🔴 Recording voiceover... hit Stop when done.';
+});
+document.getElementById('voStopBtn').addEventListener('click', () => {
+  if (voRecorder && voRecorder.state !== 'inactive') voRecorder.stop();
+  document.getElementById('voRecordBtn').disabled = false;
+  document.getElementById('voStopBtn').disabled = true;
+});
+document.getElementById('voClearBtn').addEventListener('click', () => {
+  voiceoverBlob = null;
+  const preview = document.getElementById('voPreview');
+  preview.style.display = 'none'; preview.src = '';
+  document.getElementById('voStatus').textContent = 'No voiceover recorded.';
+});
+
+// ============================================================ batch export
+function logBatch(msg){
+  const log = document.getElementById('batchLog');
+  const div = document.createElement('div');
+  div.textContent = msg; // safe textContent assignment (no XSS)
+  log.appendChild(div);
+  log.scrollTop = log.scrollHeight;
+}
+document.getElementById('batchRunBtn').addEventListener('click', async () => {
+  const btn = document.getElementById('batchRunBtn');
+  const errEl = document.getElementById('batchError');
+  const log = document.getElementById('batchLog');
+  errEl.classList.remove('show'); log.innerHTML = '';
+
+  const raw = document.getElementById('batchInput').value;
+  const scripts = raw.split(/\n-{3,}\n/).map(s=>s.trim()).filter(Boolean);
+  if (!scripts.length){ errEl.textContent = 'Paste at least one script.'; errEl.classList.add('show'); return; }
+  if (!document.getElementById('modelSel').value){ errEl.textContent = 'No model loaded. Check connection.'; errEl.classList.add('show'); return; }
+
+  btn.disabled = true; btn.textContent = '⏳ Running batch...';
+  for (let i=0; i<scripts.length; i++){
+    logBatch(`[${i+1}/${scripts.length}] Generating scenes...`);
+    try {
+      const { scenes: newScenes, lang } = await generateScenesFromText(scripts[i]);
+      scenes = newScenes;
+      if (lang) document.getElementById('langSel').value = lang;
+      renderSceneEditor();
+      buildTimeline();
+      logBatch(`[${i+1}/${scripts.length}] ${scenes.length} scenes ready. Recording & exporting...`);
+      await recordAndExport(`ai_reel_batch_${i+1}_${Date.now()}`, null);
+      logBatch(`[${i+1}/${scripts.length}] ✓ Exported.`);
+    } catch(e){
+      logBatch(`[${i+1}/${scripts.length}] ✗ Failed: ${e.message}`);
+    }
+  }
+  btn.disabled = false; btn.textContent = '▶ Generate & Export All';
+  logBatch('Batch complete.');
+});
+
+// ============================================================ structure templates
+function renderStructTemplates(){
+  const row = document.getElementById('structTplRow');
+  row.innerHTML = '';
+  Object.entries(STRUCT_TEMPLATES).forEach(([name, skeleton]) => {
+    const btn = document.createElement('button');
+    btn.className = 'tpl-swatch'; btn.textContent = name.replace(/·/g,' · ');
+    btn.style.background = 'linear-gradient(135deg,#2a3340,#1a2028)';
+    btn.addEventListener('click', () => {
+      if (scenes.length) pushHistory();
+      const fresh = skeleton.map(s => ({
+        id: makeId(), type: s.type,
+        fields: JSON.parse(JSON.stringify(s.fields)),
+        dur: DEFAULT_DURATIONS[s.type] || 3.0,
+      }));
+      scenes = fresh;
+      renderSceneEditor(); buildTimeline(); drawAtTime(0);
+    });
+    row.appendChild(btn);
+  });
+}
+
+// ============================================================ undo/redo wiring
+document.getElementById('undoBtn').addEventListener('click', () => {
+  if (!undoStack.length) return;
+  redoStack.push(snapshotScenes());
+  scenes = undoStack.pop();
+  renderSceneEditor(); buildTimeline(); drawAtTime(0);
+  updateUndoRedoButtons();
+});
+document.getElementById('redoBtn').addEventListener('click', () => {
+  if (!redoStack.length) return;
+  undoStack.push(snapshotScenes());
+  scenes = redoStack.pop();
+  renderSceneEditor(); buildTimeline(); drawAtTime(0);
+  updateUndoRedoButtons();
+});
+
+// ============================================================ save/load project
+document.getElementById('saveProjectBtn').addEventListener('click', () => {
+  const project = {
+    version: 2,
+    scenes,
+    reports,
+    format: document.getElementById('formatSel').value,
+    pace: document.getElementById('paceSel').value,
+    lang: document.getElementById('langSel').value,
+    captions: document.getElementById('captionsChk').checked,
+    theme: { primary: THEME.primary, accent: THEME.accent },
+  };
+  const blob = new Blob([JSON.stringify(project, null, 2)], {type:'application/json'});
+  downloadBlob(blob, `ai_reel_project_${Date.now()}.json`);
+});
+document.getElementById('loadProjectInput').addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const project = JSON.parse(reader.result);
+      if (!Array.isArray(project.scenes)) throw new Error('No scenes in file.');
+      if (scenes.length) pushHistory();
+      scenes = project.scenes.map(s => ({ ...s, id: s.id || makeId() }));
+      if (Array.isArray(project.reports)) reports = project.reports;
+      if (project.format){ document.getElementById('formatSel').value = project.format; applyFormat(); }
+      if (project.pace) document.getElementById('paceSel').value = project.pace;
+      if (project.lang) document.getElementById('langSel').value = project.lang;
+      if (typeof project.captions === 'boolean') document.getElementById('captionsChk').checked = project.captions;
+      if (project.theme){
+        THEME.primary = project.theme.primary || THEME.primary;
+        THEME.accent = project.theme.accent || THEME.accent;
+        document.getElementById('brandPrimary').value = THEME.primary;
+        document.getElementById('brandAccent').value = THEME.accent;
+      }
+      renderSceneEditor(); renderReportList(); buildTimeline(); drawAtTime(0);
+    } catch(err){
+      alert('Could not load project file: ' + err.message);
+    } finally {
+      e.target.value = '';
+    }
+  };
+  reader.readAsText(file);
+});
+
+// ============================================================ wiring
+document.getElementById('checkLmBtn').addEventListener('click', checkLmStudio);
+document.getElementById('aiProvider').addEventListener('change', () => {
+  updateProviderUI();
+  checkLmStudio();
+});
+document.getElementById('generateBtn').addEventListener('click', generateScenes);
+document.getElementById('addSceneBtn').addEventListener('click', () => {
+  if (scenes.length) pushHistory();
+  const type = document.getElementById('newSceneType').value;
+  scenes.push({
+    id: makeId(), type,
+    fields: JSON.parse(JSON.stringify(DEFAULT_FIELDS[type])),
+    dur: DEFAULT_DURATIONS[type] || 3.0,
+  });
+  renderSceneEditor(); buildTimeline();
+});
+document.getElementById('formatSel').addEventListener('change', () => { applyFormat(); buildTimeline(); });
+['paceSel','langSel'].forEach(id => {
+  document.getElementById(id).addEventListener('input', () => { buildTimeline(); drawAtTime(0); });
+  document.getElementById(id).addEventListener('change', () => { buildTimeline(); drawAtTime(0); });
+});
+document.getElementById('captionsChk').addEventListener('change', () => drawAtTime(0));
+document.getElementById('watermarkChk').addEventListener('change', () => drawAtTime(0));
+
+// ============================================================ tab navigation
+function wireTabNav(navId){
+  const nav = document.getElementById(navId);
+  const container = nav.parentElement;
+  const storeKey = 'aiReelTab_' + navId;
+  nav.querySelectorAll('button[data-tab]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      nav.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      container.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+      container.querySelector(`.tab-pane[data-pane="${btn.dataset.tab}"]`).classList.add('active');
+      try { localStorage.setItem(storeKey, btn.dataset.tab); } catch(e){}
+    });
+  });
+  // restore the last active tab for this nav group
+  let savedTab;
+  try { savedTab = localStorage.getItem(storeKey); } catch(e){}
+  if (savedTab){
+    const target = nav.querySelector(`button[data-tab="${savedTab}"]`);
+    if (target) target.click();
+  }
+}
+
+// ============================================================ UI language (i18n)
+let currentUiLang = 'en';
+const I18N = {
+  en: {
+    appTitle:'AI REEL STUDIO', appSubtitle:'Text → AI → animated scenes → video · with Benchmark mode',
+    tabWrite:'1 · Write', tabBench:'Benchmark', tabStyle:'2 · Style', tabAudio:'3 · Audio',
+    aiTitle:'AI Provider', providerLabel:'Provider',
+    apiKeyLabel:'API Key',
+    lmTitle:'AI Connection', lmBaseUrl:'Base URL', lmModel:'Model', lmStatus:'Status',
+    lmCheckBtn:'⟳ Check connection & load models',
+    scriptTitle:'Your Script / Text',
+    scriptPlaceholder:'Write your text here... paste a script, article, numbers, or any content you want turned into a video.\n\nExample:\n5 reasons to learn programming\n1- High demand for developers in the job market\n2- Higher pay compared to other fields\n...',
+    generateBtn:'✨ Generate Scenes with AI',
+    structTitle:'Structure Templates', structNote:'Skip the AI — drop in a proven scene skeleton and just fill in the blanks.',
+    benchLoadTitle:'Load Benchmark Report(s)', pasteJsonLabel:'Paste report JSON', addJsonBtn:'+ Add pasted JSON',
+    uploadJsonLabel:'...or upload .json file(s)', sampleBtn:'Load 3 sample reports', loadedReportsLabel:'Loaded reports (played in this order)',
+    benchSettingsTitle:'Benchmark Reel Settings', seriesTitleLabel:'Series title (intro card)', seriesSubLabel:'Series subtitle',
+    leaderboardLabel:'Add leaderboard scene (2+ reports)', buildBenchBtn:'🎬 Build Benchmark Reel', benchStatusDefault:'Load at least one report, then build the reel.',
+    reelSettingsTitle:'Reel Settings', formatLabel:'Format',
+    formatVertical:'Vertical 9:16 — Reels/Shorts/TikTok', formatSquare:'Square 1:1 — Feed', formatHorizontal:'Horizontal 16:9 — YouTube',
+    paceLabel:'Pace', paceFast:'Fast — punchy', paceNormal:'Normal', paceCinematic:'Cinematic — slow',
+    contentDirLabel:'Reel Text Direction', dirLtr:'English (LTR)', dirRtl:'Arabic (RTL)',
+    captionsLabel:'Burn word-by-word captions at the bottom',
+    bgTitle:'Background Media', bgUploadLabel:'Upload image or video', bgClearBtn:'✕ Remove background',
+    panXLabel:'Pan X', panYLabel:'Pan Y', bgStatusDefault:'No background — using default animated gradient.',
+    bgScaleLabel:'Scale', bgDimLabel:'Dim (for text)',
+    brandTitle:'Brand Kit', templateLabel:'Template', primaryColorLabel:'Primary color', accentColorLabel:'Accent color',
+    logoLabel:'Logo (optional, shown bottom-right)', logoClearBtn:'✕ Remove logo', brandStatusDefault:'Default theme.',
+    voiceMusicTitle:'Voice & Music', builtinMusicLabel:'Built-in music (generated, royalty-free — no external tracks)',
+    uploadOwnLabel:'...or upload your own', musicVolumeLabel:'Music volume', musicClearBtn:'✕ Remove music',
+    voiceoverLabel:'Voiceover (record with mic)', voRecordBtn:'⏺ Record', voStopBtn:'■ Stop', voClearBtn:'✕ Clear',
+    voStatusDefault:"No voiceover recorded. Music and voiceover are mixed into the exported video's audio track.",
+    ttsPreviewLabel:"Speak scene text aloud during Play (preview only — browser voices can't be captured into the exported video, so use the recorder above or upload a voiceover file for real narration)",
+    playBtn:'▶ Play', stopBtn:'■ Stop', exportBtn:'⏺ Export', noScenesYet:'no scenes yet',
+    mp4ChkLabel:'Auto-convert to MP4 after export (runs locally in your browser, takes a bit longer)',
+    watermarkChkLabel:'Add "Made with AI Reel Studio" watermark (free-plan export)',
+    statusNoteDefault:'Write some text and hit Generate, or add scenes manually on the right, then Play to preview or Export for the video.',
+    tabScenes:'Scenes', tabBatch:'Batch',
+    scenesEditorTitle:'Scenes Editor', addSceneBtn:'+ Add scene', undoBtn:'↶ Undo', redoBtn:'↷ Redo',
+    newSceneTypeLabel:'New scene type',
+    typeIntro:'Intro', typeTitle:'Title', typeBullet:'Bullet list', typeStat:'Big stat',
+    typeComparison:'Comparison (A vs B)', typeQuote:'Quote', typeOutro:'Outro / CTA',
+    typeBenchModel:'Bench: Model', typeBenchHero:'Bench: Hero Stats', typeBenchSecondary:'Bench: Telemetry', typeBenchLeaderboard:'Bench: Leaderboard',
+    saveProjectBtn:'💾 Save project', loadProjectBtn:'📂 Load project',
+    batchTitle:'Batch Export',
+    batchNote:'Paste multiple scripts, each separated by a line with just "---". Each one gets its own AI-generated scenes and its own exported file.',
+    batchRunBtn:'▶ Generate & Export All',
+  },
+  ar: {
+    appTitle:'استوديو الريلز بالذكاء الاصطناعي', appSubtitle:'نص ← ذكاء اصطناعي ← مشاهد متحركة ← فيديو · مع وضع Benchmark',
+    tabWrite:'١ · الكتابة', tabBench:'معايير الأداء', tabStyle:'٢ · الشكل', tabAudio:'٣ · الصوت',
+    aiTitle:'مزوّد الذكاء الاصطناعي', providerLabel:'المزوّد',
+    apiKeyLabel:'مفتاح API',
+    lmTitle:'الاتصال بالذكاء الاصطناعي', lmBaseUrl:'رابط الخادم (Base URL)', lmModel:'النموذج', lmStatus:'الحالة',
+    lmCheckBtn:'⟳ فحص الاتصال وتحميل النماذج',
+    scriptTitle:'النص الخاص بك',
+    scriptPlaceholder:'اكتب النص هنا... أو الصق سكريبت، مقال، أرقام، أو أي محتوى تريد تحويله لفيديو.\n\nمثال:\n5 أسباب لتعلم البرمجة\n1- الطلب العالي على المبرمجين في سوق العمل\n2- راتب مرتفع مقارنة بمجالات أخرى\n...',
+    generateBtn:'✨ توليد المشاهد بالذكاء الاصطناعي',
+    structTitle:'قوالب بنية جاهزة', structNote:'من غير ذكاء اصطناعي — اختار هيكل مشاهد جاهز وعدّل النصوص بس.',
+    benchLoadTitle:'تحميل تقارير المعايير', pasteJsonLabel:'الصق تقرير JSON', addJsonBtn:'+ إضافة JSON الملصوق',
+    uploadJsonLabel:'...أو ارفع ملفات .json', sampleBtn:'تحميل 3 تقارير تجريبية', loadedReportsLabel:'التقارير المحمّلة (بهذا الترتيب)',
+    benchSettingsTitle:'إعدادات فيديو المعايير', seriesTitleLabel:'عنوان السلسلة (بطاقة المقدمة)', seriesSubLabel:'العنوان الفرعي للسلسلة',
+    leaderboardLabel:'إضافة مشهد لوحة المتصدرين (2+ تقارير)', buildBenchBtn:'🎬 بناء فيديو المعايير', benchStatusDefault:'حمّل تقرير واحد على الأقل، ثم ابنِ الفيديو.',
+    reelSettingsTitle:'إعدادات الفيديو', formatLabel:'المقاس',
+    formatVertical:'عمودي 9:16 — ريلز/شورتس/تيك توك', formatSquare:'مربع 1:1 — فييد', formatHorizontal:'أفقي 16:9 — يوتيوب',
+    paceLabel:'الإيقاع', paceFast:'سريع — نشيط', paceNormal:'عادي', paceCinematic:'سينمائي — بطيء',
+    contentDirLabel:'اتجاه نص الفيديو', dirLtr:'إنجليزي (LTR)', dirRtl:'عربي (RTL)',
+    captionsLabel:'إضافة كابشنز كلمة بكلمة أسفل الفيديو',
+    bgTitle:'خلفية الفيديو', bgUploadLabel:'رفع صورة أو فيديو', bgClearBtn:'✕ إزالة الخلفية',
+    panXLabel:'تحريك أفقي', panYLabel:'تحريك رأسي', bgStatusDefault:'لا توجد خلفية — يتم استخدام التدرج المتحرك الافتراضي.',
+    bgScaleLabel:'الحجم', bgDimLabel:'التعتيم (لإظهار النص)',
+    brandTitle:'هوية العلامة', templateLabel:'قالب الألوان', primaryColorLabel:'اللون الأساسي', accentColorLabel:'اللون الثانوي',
+    logoLabel:'الشعار (اختياري، يظهر أسفل يمين الفيديو)', logoClearBtn:'✕ إزالة الشعار', brandStatusDefault:'الثيم الافتراضي.',
+    voiceMusicTitle:'الصوت والموسيقى', builtinMusicLabel:'موسيقى مدمجة (متولّدة، بدون حقوق نشر — من غير ملفات خارجية)',
+    uploadOwnLabel:'...أو ارفع ملفك الخاص', musicVolumeLabel:'مستوى صوت الموسيقى', musicClearBtn:'✕ إزالة الموسيقى',
+    voiceoverLabel:'تعليق صوتي (تسجيل بالمايك)', voRecordBtn:'⏺ تسجيل', voStopBtn:'■ إيقاف', voClearBtn:'✕ مسح',
+    voStatusDefault:'لا يوجد تعليق صوتي مسجل. الموسيقى والتعليق الصوتي بيتم دمجهم في صوت الفيديو النهائي.',
+    ttsPreviewLabel:'قراءة نص المشهد بصوت المتصفح أثناء المعاينة فقط (معاينة فقط — صوت المتصفح مينفعش يتسجل جوا الفيديو، استخدم التسجيل بالمايك فوق أو ارفع ملف تعليق صوتي للتصدير الفعلي)',
+    playBtn:'▶ تشغيل', stopBtn:'■ إيقاف', exportBtn:'⏺ تصدير', noScenesYet:'لا توجد مشاهد بعد',
+    mp4ChkLabel:'تحويل تلقائي لـ MP4 بعد التصدير (يتم محلياً في متصفحك، ياخد وقت أطول شوية)',
+    watermarkChkLabel:'إضافة علامة مائية "Made with AI Reel Studio" (تصدير النسخة المجانية)',
+    statusNoteDefault:'اكتب نص واضغط Generate، أو أضف مشاهد يدوياً من اليمين، ثم Play للمعاينة أو Export للفيديو.',
+    tabScenes:'المشاهد', tabBatch:'دفعة',
+    scenesEditorTitle:'محرر المشاهد', addSceneBtn:'+ إضافة مشهد', undoBtn:'↶ تراجع', redoBtn:'↷ إعادة',
+    newSceneTypeLabel:'نوع المشهد الجديد',
+    typeIntro:'مقدمة', typeTitle:'عنوان', typeBullet:'قائمة نقاط', typeStat:'رقم/إحصائية كبيرة',
+    typeComparison:'مقارنة (A vs B)', typeQuote:'اقتباس', typeOutro:'خاتمة / دعوة لإجراء',
+    typeBenchModel:'معيار: عنوان النموذج', typeBenchHero:'معيار: أرقام بارزة', typeBenchSecondary:'معيار: تتبع تفصيلي', typeBenchLeaderboard:'معيار: لوحة المتصدرين',
+    saveProjectBtn:'💾 حفظ المشروع', loadProjectBtn:'📂 تحميل مشروع',
+    batchTitle:'تصدير دفعة',
+    batchNote:'الصق أكتر من سكريبت، كل واحد مفصول بسطر فيه "---" بس. كل سكريبت هياخد مشاهده الخاصة من الذكاء الاصطناعي وملف تصدير منفصل.',
+    batchRunBtn:'▶ توليد وتصدير الكل',
+  },
+};
+
+function applyI18n(lang){
+  const dict = I18N[lang] || I18N.en;
+  currentUiLang = lang;
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.dataset.i18n;
+    if (dict[key] !== undefined) el.textContent = dict[key];
+  });
+  document.querySelectorAll('[data-i18n-ph]').forEach(el => {
+    const key = el.dataset.i18nPh;
+    if (dict[key] !== undefined) el.placeholder = dict[key];
+  });
+  document.documentElement.lang = lang;
+  document.documentElement.dir = (lang==='ar') ? 'rtl' : 'ltr';
+  document.getElementById('uiLangEn').classList.toggle('active', lang==='en');
+  document.getElementById('uiLangAr').classList.toggle('active', lang==='ar');
+  try { localStorage.setItem('aiReelUiLang', lang); } catch(e){}
+  renderSceneEditor();
+}
+document.getElementById('uiLangEn').addEventListener('click', () => applyI18n('en'));
+document.getElementById('uiLangAr').addEventListener('click', () => applyI18n('ar'));
+
+// ============================================================ init
+loadBrandKit();
+document.getElementById('brandPrimary').value = THEME.primary;
+document.getElementById('brandAccent').value = THEME.accent;
+updateProviderUI();
+renderTemplateSwatches();
+renderStructTemplates();
+renderSynthMusicRow();
+renderReportList();
+updateUndoRedoButtons();
+wireTabNav('leftTabNav');
+wireTabNav('rightTabNav');
+{
+  let savedLang = 'en';
+  try { savedLang = localStorage.getItem('aiReelUiLang') || 'en'; } catch(e){}
+  applyI18n(savedLang);
+}
+drawBackground(0);
+plainText('AI Reel Studio — ready', W/2, H/2, 34, 600, '#48505e', 1, 'Inter', 'center');
+plainText('Connect AI → write text → Generate · or Benchmark tab', W/2, H/2+50, 22, 500, '#48505e', 0.8, 'IBM Plex Mono', 'center');
+renderSceneEditor();
+checkLmStudio();
+</script>
+</body>
+</html>
