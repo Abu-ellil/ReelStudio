@@ -26,10 +26,11 @@
   .layout > .col.center{flex:1 1 0;min-width:0;}
   .layout > .col.right{flex:0 0 320px;min-width:0;}
   /* مقابض السحب بين الأعمدة */
-  .gutter{position:relative;width:14px;cursor:col-resize;background:transparent;flex:0 0 14px;z-index:5;}
-  .gutter::before{content:'';position:absolute;top:0;bottom:0;left:50%;width:2px;transform:translateX(-50%);
-    background:var(--border);border-radius:2px;transition:background .15s ease, box-shadow .15s ease;}
-  .gutter:hover::before,.gutter.dragging::before{background:var(--cyan);box-shadow:0 0 8px var(--cyan);}
+  .gutter{position:relative;width:14px;min-height:100vh;cursor:col-resize;background:transparent;flex:0 0 14px;
+    align-self:stretch;z-index:5;}
+  .gutter::before{content:'';position:absolute;top:0;bottom:0;left:50%;width:3px;transform:translateX(-50%);
+    background:var(--border);border-radius:2px;transition:background .15s ease, box-shadow .15s ease, width .15s ease;}
+  .gutter:hover::before,.gutter.dragging::before{background:var(--cyan);box-shadow:0 0 10px var(--cyan);width:4px;}
   body.gutter-dragging{cursor:col-resize;user-select:none;}
   body.gutter-dragging *{pointer-events:none;}
   @media (max-width:1300px){.layout .gutter-r,.layout > .col.right{display:none;}}
@@ -84,7 +85,11 @@
   .btn-ghost{background:transparent;border:1px solid var(--border);color:var(--fg);}
   .btn-ghost:hover:not(:disabled){border-color:var(--cyan);color:var(--cyan);}
   .btn-small{width:auto;padding:5px 9px;font-size:11px;margin:0;}
-  .btn-tiny{width:auto;padding:3px 7px;font-size:10px;margin:0;border-radius:5px;}
+  .btn-tiny{
+    width:auto;padding:3px 7px;font-size:10px;margin:0;border-radius:5px;
+    line-height:1;display:inline-flex;align-items:center;justify-content:center;
+    min-width:22px;height:22px;
+  }
 
   .status-dot{width:8px;height:8px;border-radius:50%;display:inline-block;}
   .status-dot.ok{background:var(--green);box-shadow:0 0 6px var(--green);}
@@ -97,7 +102,7 @@
     position:relative;transition:border-color .15s ease;
   }
   .scene-card.selected{border-color:var(--cyan);}
-  .scene-card-head{display:flex;align-items:center;gap:6px;margin-bottom:6px;}
+  .scene-card-head{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:6px;}
   .scene-type-badge{
     font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;
     padding:2px 7px;border-radius:4px;font-family:'IBM Plex Mono',monospace;
@@ -113,6 +118,16 @@
   .scene-type-benchmark_hero{background:rgba(95,227,138,0.15);color:var(--green);}
   .scene-type-benchmark_secondary{background:rgba(183,148,246,0.15);color:var(--purple);}
   .scene-type-benchmark_leaderboard{background:rgba(255,107,107,0.15);color:var(--red);}
+  .scene-type-lower_third{background:rgba(255,180,84,0.15);color:var(--amber);}
+  .scene-type-cta{background:rgba(63,208,255,0.15);color:var(--cyan);}
+  .scene-type-testimonial{background:rgba(255,255,255,0.08);color:#cdd5e0;}
+  .scene-type-checklist{background:rgba(95,227,138,0.15);color:var(--green);}
+  .scene-type-bar_chart{background:rgba(255,107,107,0.15);color:var(--red);}
+  .scene-type-countdown{background:rgba(183,148,246,0.15);color:var(--purple);}
+  .scene-type-donut{background:rgba(255,180,84,0.15);color:var(--amber);}
+  .scene-type-progress{background:rgba(95,227,138,0.15);color:var(--green);}
+  .scene-type-faq{background:rgba(63,208,255,0.15);color:var(--cyan);}
+  .scene-type-timeline{background:rgba(183,148,246,0.15);color:var(--purple);}
   .scene-card-body{display:flex;flex-direction:column;gap:4px;}
   .scene-card-body textarea{min-height:30px;font-size:11px;padding:5px 7px;}
   .scene-card-controls{display:flex;gap:4px;margin-top:6px;}
@@ -183,8 +198,9 @@
   .checkbox-row input{width:auto;margin:0;}
 
   audio{width:100%;margin-top:6px;height:32px;}
-  .btn-row-tight{display:flex;gap:6px;margin-top:8px;}
-  .btn-row-tight button{margin:0;}
+  .btn-row-tight{display:flex;gap:6px;margin-top:8px;align-items:center;}
+  .btn-row-tight button{margin:0;width:auto;flex:0 0 auto;}
+  .btn-row-tight span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 
   .batch-note{font-size:10.5px;color:var(--dim2);line-height:1.6;margin-bottom:8px;font-family:'IBM Plex Mono',monospace;}
   .batch-log{max-height:200px;overflow-y:auto;font-size:11px;font-family:'IBM Plex Mono',monospace;color:var(--dim);margin-top:8px;line-height:1.7;}
@@ -496,6 +512,16 @@
               <option value="benchmark_hero" data-i18n="typeBenchHero">Benchmark: Hero Stats</option>
               <option value="benchmark_secondary" data-i18n="typeBenchSecondary">Benchmark: Telemetry</option>
               <option value="benchmark_leaderboard" data-i18n="typeBenchLeaderboard">Benchmark: Leaderboard</option>
+              <option value="lower_third" data-i18n="typeLowerThird">Lower Third</option>
+              <option value="cta" data-i18n="typeCta">Call to Action</option>
+              <option value="testimonial" data-i18n="typeTestimonial">Testimonial</option>
+              <option value="checklist" data-i18n="typeChecklist">Checklist</option>
+              <option value="bar_chart" data-i18n="typeBarChart">Bar Chart</option>
+              <option value="countdown" data-i18n="typeCountdown">Countdown</option>
+              <option value="donut" data-i18n="typeDonut">Donut Chart</option>
+              <option value="progress" data-i18n="typeProgress">Progress Bar</option>
+              <option value="faq" data-i18n="typeFaq">FAQ / Q&amp;A</option>
+              <option value="timeline" data-i18n="typeTimeline">Timeline</option>
             </select>
           </div>
         </div>
@@ -627,6 +653,8 @@ let bgDim = 0.45;       // dark overlay over background media so text stays read
 const DEFAULT_DURATIONS = {
   intro:3.2, title:2.2, bullet:4.5, stat:3.0, comparison:4.5, quote:3.0, outro:3.2,
   benchmark_model:2.3, benchmark_hero:4.2, benchmark_secondary:4.8, benchmark_leaderboard:5.5,
+  lower_third:3.0, cta:3.2, testimonial:4.0, checklist:4.5, bar_chart:4.8,
+  countdown:4.0, donut:3.2, progress:3.0, faq:4.0, timeline:4.5,
 };
 
 const DEFAULT_FIELDS = {
@@ -641,11 +669,23 @@ const DEFAULT_FIELDS = {
   benchmark_hero:       {model:'llama3.1:8b', avg_tokens_per_sec:'89.4', avg_ttft_s:'0.18'},
   benchmark_secondary:  {model:'llama3.1:8b', avg_gpu_util_pct:'78', peak_gpu_util_pct:'95', peak_vram_mb:'6350', avg_gpu_temp_c:'59', peak_gpu_temp_c:'66', avg_gpu_power_w:'265', avg_cpu_pct:'19', peak_ram_mb:'8100'},
   benchmark_leaderboard:{reports:'[{"model":"RTX 4090","gpu":"24GB","avg_tokens_per_sec":"89.4"}, {"model":"RTX 3060","gpu":"12GB","avg_tokens_per_sec":"34.2"}]'},
+  lower_third:{name:'Sara Mohamed', role:'Product Designer'},
+  cta:{button:'Shop Now', subtitle:'Limited time offer'},
+  testimonial:{name:'Sara Mohamed', role:'Happy Customer', text:'This product completely changed how I work. Highly recommended!', rating:'5'},
+  checklist:{title:'What you need', items:['A clear goal','Consistency every day','Patience with the process']},
+  bar_chart:{title:'Sales by Quarter', data:'[{"label":"Q1","value":"45"},{"label":"Q2","value":"78"},{"label":"Q3","value":"62"},{"label":"Q4","value":"91"}]'},
+  countdown:{start:'3', text:'GO'},
+  donut:{label:'Mobile users', value:'70', unit:'%'},
+  progress:{label:'Project completion', value:'65', unit:'%'},
+  faq:{question:'What is Reel Studio?', answer:'A tool to create animated reels from your content in minutes.'},
+  timeline:{title:'Our Journey', steps:'[{"label":"2019","text":"Founded"},{"label":"2021","text":"Series A"},{"label":"2023","text":"1M users"},{"label":"2025","text":"Global"}]'},
 };
 const SCENE_TYPE_NAMES = {
   intro:'Intro', title:'Title', bullet:'Bullet', stat:'Stat',
   comparison:'Comparison', quote:'Quote', outro:'Outro',
   benchmark_model:'Bench: Model', benchmark_hero:'Bench: Hero', benchmark_secondary:'Bench: Telemetry', benchmark_leaderboard:'Bench: Leaderboard',
+  lower_third:'Lower Third', cta:'CTA', testimonial:'Testimonial', checklist:'Checklist',
+  bar_chart:'Bar Chart', countdown:'Countdown', donut:'Donut', progress:'Progress', faq:'FAQ', timeline:'Timeline',
 };
 
 // ============================================================ structure templates
@@ -673,6 +713,25 @@ const STRUCT_TEMPLATES = {
     {type:'stat',  fields:{label:'the key stat', value:'87', unit:'%'}},
     {type:'quote', fields:{text:'A supporting quote that reinforces the stat.', author:'Source'}},
     {type:'outro', fields:{title:'Learn more', subtitle:'Link in bio'}},
+  ],
+  'Marketing': [
+    {type:'intro',       fields:{title:'Meet our new product', subtitle:'you will love this'}},
+    {type:'lower_third', fields:{name:'Sara Mohamed', role:'Product Designer'}},
+    {type:'testimonial', fields:{name:'Happy Customer', role:'Verified Buyer', text:'This changed everything for me. Five stars!', rating:'5'}},
+    {type:'cta',         fields:{button:'Shop Now', subtitle:'Limited time offer'}},
+  ],
+  'Tutorial': [
+    {type:'intro',    fields:{title:'How it works', subtitle:'in 3 simple steps'}},
+    {type:'faq',      fields:{question:'What is this tool?', answer:'It helps you create content faster and easier.'}},
+    {type:'checklist',fields:{title:'What you need', items:['An idea','A few minutes','Consistency']}},
+    {type:'outro',    fields:{title:'Try it yourself', subtitle:'Follow for more tips'}},
+  ],
+  'Data·Story': [
+    {type:'intro',    fields:{title:'The numbers speak', subtitle:''}},
+    {type:'donut',    fields:{label:'Mobile users', value:'70', unit:'%'}},
+    {type:'bar_chart',fields:{title:'Growth by Quarter', data:'[{"label":"Q1","value":"45"},{"label":"Q2","value":"78"},{"label":"Q3","value":"62"}]'}},
+    {type:'timeline', fields:{title:'Our Journey', steps:'[{"label":"2019","text":"Founded"},{"label":"2021","text":"Series A"},{"label":"2023","text":"1M users"}]'}},
+    {type:'outro',    fields:{title:'Ready to grow?', subtitle:'Link in bio'}},
   ],
 };
 
@@ -1095,11 +1154,11 @@ function renderSceneEditor(){
     card.innerHTML = `
       <div class="scene-card-head">
         <img src="${renderSceneThumb(sc)}" style="width:34px;height:60px;object-fit:cover;border-radius:4px;border:1px solid var(--border);">
-        <select data-type-sel style="width:auto;min-width:120px;padding:4px 6px;font-size:10.5px;margin:0;" class="scene-type-badge scene-type-${sc.type}">
+        <select data-type-sel style="flex:1 1 80px;min-width:0;width:auto;padding:4px 6px;font-size:10.5px;margin:0;" class="scene-type-badge scene-type-${sc.type}">
           ${Object.keys(SCENE_TYPE_NAMES).map(t => `<option value="${escAttr(t)}" ${t===sc.type?'selected':''}>${escHtml(SCENE_TYPE_NAMES[t])}</option>`).join('')}
         </select>
         <label style="margin:0;font-size:9.5px;">dur</label>
-        <input type="text" data-dur="${i}" value="${escAttr(sc.dur)}" style="width:50px;padding:3px 6px;font-size:11px;">
+        <input type="text" data-dur="${i}" value="${escAttr(sc.dur)}" style="width:50px;min-width:0;flex:0 0 50px;padding:3px 6px;font-size:11px;">
         <div class="scene-card-controls" style="margin:0 0 0 auto;">
           <button class="btn-ghost btn-tiny" data-act="up">↑</button>
           <button class="btn-ghost btn-tiny" data-act="down">↓</button>
@@ -1671,6 +1730,392 @@ function sceneBenchmarkLeaderboard(p, f){
   });
 }
 
+// ============================================================ scene renderers — NEW (v2)
+// Lower Third — news-style bar: name + role, slides in from the side (RTL-aware)
+function sceneLowerThird(p, f){
+  const op = fadeWindow(p);
+  const fp = fontFor();
+  const slideIn = easeOutCubic(Math.min(1, p/0.3));
+  const rtl = isRTL();
+  const barW = Math.min(720, W*0.7);
+  const barH = Math.min(120, H*0.16);
+  const margin = W*0.05;
+  const x = rtl ? (W - margin - barW) - (1-slideIn)*(barW+40) : margin + (1-slideIn)*(barW+40);
+  const y = H*0.78;
+  // accent left/right edge
+  ctx.save(); ctx.globalAlpha = op;
+  roundRect(ctx, x, y, barW, barH, 12);
+  ctx.fillStyle = 'rgba(4,18,26,0.78)'; ctx.fill();
+  ctx.strokeStyle = THEME.primary; ctx.lineWidth = 2; ctx.stroke();
+  // accent bar on leading edge
+  const accX = rtl ? x+barW-6 : x;
+  ctx.fillStyle = THEME.primary;
+  ctx.shadowColor = THEME.primary; ctx.shadowBlur = 18;
+  roundRect(ctx, accX, y, 6, barH, 3); ctx.fill();
+  ctx.restore();
+  const padX = rtl ? barW-28 : 28;
+  const align = rtl ? 'right' : 'left';
+  const nameSize = fitFont(f.name||'', barW-60, Math.min(40, W*0.038), fp, 800, 18);
+  gradientText(f.name||'', x+padX, y+barH*0.42, nameSize, 800, THEME.primary, THEME.accent, op, fp, align);
+  if (f.role) plainText(f.role, x+padX, y+barH*0.74, Math.min(24, W*0.024), 600, '#9aa6b5', op, fontMono(), align);
+}
+
+// CTA — big pulsing button with a bouncing arrow
+function sceneCta(p, f){
+  const op = fadeWindow(p);
+  const fp = fontFor();
+  const appear = easeOutBack(Math.min(1, p/0.35));
+  const btnText = f.button||'';
+  const btnSize = Math.min(40, W*0.038);
+  ctx.font = `800 ${btnSize}px "${fp}"`;
+  const textW = ctx.measureText(btnText).width;
+  const btnW = Math.min(W*0.7, textW + Math.min(160, W*0.16));
+  const btnH = Math.min(120, H*0.15);
+  const bx = W/2 - btnW/2, by = H/2 - btnH/2;
+  const pulse = 1 + Math.sin(p*Math.PI*4)*0.035;
+  ctx.save(); ctx.globalAlpha = op*appear;
+  // glow halo
+  ctx.shadowColor = THEME.primary; ctx.shadowBlur = 30 + Math.sin(p*Math.PI*4)*12;
+  roundRect(ctx, bx-btnW*(pulse-1)/2, by-btnH*(pulse-1)/2, btnW*pulse, btnH*pulse, btnH*0.22);
+  ctx.fillStyle = THEME.primary; ctx.fill();
+  ctx.restore();
+  ctx.save(); ctx.globalAlpha = op*appear;
+  ctx.font = `800 ${btnSize}px "${fp}"`; ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillStyle = '#04121a'; ctx.fillText(btnText, W/2, H/2);
+  ctx.restore();
+  // bouncing arrow above button
+  const arrowY = by - 60 - Math.abs(Math.sin(p*Math.PI*3))*18;
+  const arrowOp = op*easeOutCubic(Math.min(1, Math.max(0, (p-0.3)/0.3)));
+  ctx.save(); ctx.globalAlpha = arrowOp;
+  ctx.fillStyle = THEME.accent; ctx.shadowColor = THEME.accent; ctx.shadowBlur = 20;
+  ctx.font = `900 ${Math.min(64, W*0.06)}px "Inter"`; ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText('↑', W/2, arrowY);
+  ctx.restore();
+  if (f.subtitle){
+    plainText(f.subtitle, W/2, by+btnH+50, Math.min(24, W*0.024), 600, THEME.primary, op*0.95, fontMono(), 'center');
+  }
+}
+
+// Testimonial — avatar initials, name, stars, quote box
+function sceneTestimonial(p, f){
+  const op = fadeWindow(p);
+  const fp = fontFor();
+  const rtl = isRTL();
+  // avatar with initials
+  const avStagger = easeOutCubic(Math.min(1, p/0.3));
+  const avR = Math.min(70, W*0.068);
+  const avX = rtl ? W/2 + avR + 20 : W/2 - avR - 20;
+  const avY = H*0.26;
+  const initials = (f.name||'').split(/\s+/).filter(Boolean).map(w=>w[0]).slice(0,2).join('').toUpperCase() || '?';
+  ctx.save(); ctx.globalAlpha = op*avStagger;
+  ctx.beginPath(); ctx.arc(avX, avY, avR, 0, Math.PI*2);
+  ctx.fillStyle = THEME.primary; ctx.shadowColor = THEME.primary; ctx.shadowBlur = 24; ctx.fill();
+  ctx.shadowBlur = 0; ctx.fillStyle = '#04121a';
+  ctx.font = `800 ${Math.round(avR*0.85)}px "Inter"`; ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText(initials, avX, avY+2);
+  ctx.restore();
+  // name + role (stagger)
+  const nameStagger = easeOutCubic(Math.min(1, Math.max(0,(p-0.15)/0.3)));
+  const nameX = rtl ? avX - avR - 12 : avX + avR + 12;
+  const nameAlign = rtl ? 'right' : 'left';
+  const nameSize = fitFont(f.name||'', W*0.4, Math.min(32, W*0.03), fp, 800, 16);
+  plainText(f.name||'', nameX, avY-10, nameSize, 800, '#e8edf4', op*nameStagger, fp, nameAlign);
+  if (f.role) plainText(f.role, nameX, avY+20, Math.min(20, W*0.02), 600, '#9aa6b5', op*nameStagger, fontMono(), nameAlign);
+  // stars
+  const starStagger = easeOutCubic(Math.min(1, Math.max(0,(p-0.3)/0.3)));
+  const rating = Math.max(0, Math.min(5, parseInt(f.rating)||0));
+  const starY = avY + avR + 36;
+  const starSize = Math.min(34, W*0.034);
+  ctx.save(); ctx.globalAlpha = op*starStagger;
+  ctx.font = `${starSize}px "Inter"`; ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillStyle = '#ffb454'; ctx.shadowColor = '#ffb454'; ctx.shadowBlur = 12;
+  for (let i=0;i<5;i++){
+    const sx = W/2 + (i-2)*(starSize+8);
+    ctx.globalAlpha = op*starStagger*(i<rating?1:0.25);
+    ctx.fillText(i<rating?'★':'☆', sx, starY);
+  }
+  ctx.restore();
+  // quote box
+  const qStagger = easeOutCubic(Math.min(1, Math.max(0,(p-0.4)/0.4)));
+  const qOp = op*qStagger;
+  const boxW = Math.min(820, W*0.8), boxH = Math.min(220, H*0.24);
+  const bx = W/2 - boxW/2, by = H*0.52;
+  ctx.save(); ctx.globalAlpha = qOp;
+  roundRect(ctx, bx, by, boxW, boxH, 14);
+  ctx.strokeStyle = THEME.primary; ctx.lineWidth = 1.5; ctx.stroke();
+  ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.fill();
+  ctx.restore();
+  const quoteSize = Math.min(28, W*0.028);
+  const lines = wrapText(f.text||'', boxW-70, fp, quoteSize, 600);
+  const lh = Math.round(quoteSize*1.3);
+  const startY = by + boxH/2 - (lines.length*lh)/2 + lh*0.7;
+  lines.forEach((ln,i) => {
+    plainText(ln, W/2, startY+i*lh, quoteSize, 600, '#e8edf4', qOp, fp, 'center');
+  });
+}
+
+// Checklist — like bullet, but with ✓ instead of numbers
+function sceneChecklist(p, f){
+  const op = fadeWindow(p);
+  const fp = fontFor();
+  const items = Array.isArray(f.items) ? f.items : [];
+  const titleSize = fitFont(f.title||'', W*0.84, Math.min(38,W*0.035), fp, 800, 18);
+  gradientText(f.title||'', W/2, H*0.09, titleSize, 800, THEME.primary, THEME.accent, op, fp, 'center');
+  const startY = H*0.17;
+  const gap = Math.min(110, (H-startY-120)/Math.max(items.length,1));
+  const circleOffset = Math.min(540, W*0.26);
+  const textOffset = Math.min(490, W*0.235);
+  const checkSize = Math.min(26, W*0.026);
+  const checkR = Math.min(26, W*0.026);
+  const textSize = Math.min(34, W*0.034);
+  const lineH = Math.round(textSize*1.24);
+  const maxTextWidth = Math.max(200, W - textOffset - 70);
+  items.forEach((item,i) => {
+    const stagger = Math.min(1, Math.max(0, (p-0.1-i*0.08)/0.35));
+    const localOp = op*easeOutCubic(stagger);
+    const y = startY + i*gap;
+    const cx = isRTL()?W/2+circleOffset:W/2-circleOffset;
+    ctx.save(); ctx.globalAlpha = localOp;
+    ctx.beginPath(); ctx.arc(cx, y-8, checkR, 0, Math.PI*2);
+    ctx.fillStyle = THEME.accent; ctx.shadowColor = THEME.accent; ctx.shadowBlur = 14; ctx.fill();
+    ctx.shadowBlur = 0; ctx.fillStyle = '#04121a';
+    ctx.font=`800 ${checkSize}px "Inter"`; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText('✓', cx, y-7);
+    ctx.restore();
+    const lines = wrapText(item, maxTextWidth, fp, textSize, 600);
+    lines.forEach((ln,li) => {
+      plainText(ln, isRTL()?W/2+textOffset:W/2-textOffset, y+li*lineH-8, textSize, 600, '#e8edf4', localOp, fp, textAlignBase());
+    });
+  });
+}
+
+// Bar Chart — multiple horizontal bars from JSON
+function sceneBarChart(p, f){
+  const op = fadeWindow(p, 0.12, 0.15);
+  const fp = fontFor();
+  const titleSize = fitFont(f.title||'', W*0.84, Math.min(34,W*0.032), fp, 800, 18);
+  gradientText(f.title||'', W/2, H*0.085, titleSize, 800, THEME.primary, THEME.accent, op, fp, 'center');
+  let bars = [];
+  try { bars = typeof f.data === 'string' ? JSON.parse(f.data) : (f.data||[]); } catch(e){ bars = []; }
+  if (!Array.isArray(bars) || !bars.length) return;
+  const sideMargin = W*0.05;
+  const numReserve = W*0.16;
+  const barMaxW = Math.min(W - sideMargin*2 - numReserve, W*0.62);
+  const gap = Math.min(26, H*0.014);
+  const topY = H*0.18, bottomMargin = H*0.08;
+  const availH = H - topY - bottomMargin;
+  const barH = Math.max(34, Math.min(60, (availH - gap*(bars.length-1))/bars.length));
+  const totalH = bars.length*barH + gap*(bars.length-1);
+  const startY = topY + Math.max(0, (availH - totalH)/2);
+  const startX = sideMargin;
+  const maxVal = Math.max(...bars.map(b=>parseFloat(b.value)||0), 1);
+  const labelSize = Math.min(18, W*0.018);
+  const numSize = Math.min(24, W*0.024);
+  bars.forEach((b,i) => {
+    const stagger = Math.min(1, Math.max(0, (p-0.15-i*0.1)/0.45));
+    const growP = easeOutCubic(stagger);
+    const localOp = op*Math.min(1, stagger*3);
+    const y = startY + i*(barH+gap);
+    const val = parseFloat(b.value)||0;
+    const w = barMaxW * (val/maxVal) * growP;
+    // bar
+    ctx.save(); ctx.globalAlpha = localOp;
+    roundRect(ctx, startX, y, Math.max(2,w), barH, 8);
+    const grad = ctx.createLinearGradient(startX,0,startX+barMaxW,0);
+    grad.addColorStop(0, THEME.primary); grad.addColorStop(1, THEME.accent);
+    ctx.fillStyle = grad; ctx.shadowColor = THEME.primary; ctx.shadowBlur = 16;
+    ctx.fill();
+    ctx.restore();
+    // label (above-left)
+    plainText(b.label||'', startX, y-8, labelSize, 600, '#8b949e', localOp, fontMono(), 'left');
+    // count-up value
+    const shown = val * growP;
+    plainText(fmtNum(shown, String(b.value||'').includes('.')?1:0), startX + Math.max(2,w) + 14, y+barH/2+7,
+              numSize, 700, '#e8edf4', localOp, fontMono(), 'left');
+  });
+}
+
+// Countdown — big number 3..2..1..GO
+function sceneCountdown(p, f){
+  const op = fadeWindow(p, 0.05, 0.05);
+  const start = Math.max(1, parseInt(f.start)||3);
+  const nums = [];
+  for (let n=start; n>=1; n--) nums.push(String(n));
+  const finalText = f.text || 'GO';
+  const segments = nums.length + 1; // numbers + final text
+  const segLen = 1/segments;
+  const segIdx = Math.min(segments-1, Math.floor(p/segLen));
+  const segP = (p - segIdx*segLen)/segLen; // 0..1 within segment
+  const isFinal = segIdx === segments-1;
+  // each number pops in then fades; final text glows
+  const pop = isFinal ? easeOutCubic(Math.min(1, segP/0.3)) : easeOutBack(Math.min(1, segP/0.4));
+  const fade = isFinal ? 1 : (segP < 0.6 ? 1 : easeOutCubic((segP-0.6)/0.4));
+  const localOp = op*pop*fade;
+  const display = isFinal ? finalText : nums[segIdx];
+  const size = Math.min(240, W*0.22);
+  if (isFinal){
+    glowGradientText(display, W/2, H/2, size, 900, THEME.primary, THEME.accent, localOp, 50, fontFor(), 'center');
+  } else {
+    glowText(display, W/2, H/2, size, 900, THEME.primary, localOp, 50, fontFor(), 'center');
+  }
+}
+
+// Donut — single circular percentage
+function sceneDonut(p, f){
+  const op = fadeWindow(p);
+  const growP = easeOutCubic(Math.min(1, p/0.6));
+  const value = Math.max(0, Math.min(100, parseFloat(f.value)||0));
+  const cx = W/2, cy = H*0.46;
+  const radius = Math.min(W*0.18, H*0.22);
+  const lineWidth = Math.min(46, W*0.045);
+  const startAngle = -Math.PI/2;
+  const endAngle = startAngle + (value/100)*Math.PI*2*growP;
+  // background track
+  ctx.save(); ctx.globalAlpha = op*0.4;
+  ctx.beginPath(); ctx.arc(cx, cy, radius, 0, Math.PI*2);
+  ctx.strokeStyle = '#1e2530'; ctx.lineWidth = lineWidth; ctx.stroke();
+  ctx.restore();
+  // filled arc with gradient
+  ctx.save(); ctx.globalAlpha = op;
+  ctx.beginPath(); ctx.arc(cx, cy, radius, startAngle, endAngle);
+  ctx.strokeStyle = THEME.primary; ctx.lineWidth = lineWidth; ctx.lineCap='round';
+  ctx.shadowColor = THEME.primary; ctx.shadowBlur = 24; ctx.stroke();
+  ctx.restore();
+  // center percentage (count-up)
+  const countP = easeOutCubic(Math.min(1, p/0.5));
+  const shown = value*countP;
+  const pctText = fmtNum(shown, String(f.value||'').includes('.')?1:0, f.unit?' '+f.unit:'');
+  const valSize = fitFont(pctText, radius*1.5, Math.min(72, W*0.068), fontMono(), 800, 24);
+  glowText(pctText, cx, cy+valSize*0.35, valSize, 800, '#e8edf4', op, 8, fontMono(), 'center');
+  // label below
+  if (f.label) plainText(f.label, cx, cy + radius + Math.min(50, H*0.06), Math.min(28, W*0.028), 700, '#9aa6b5', op, fontFor(), 'center');
+}
+
+// Progress — single horizontal bar filling to a percentage
+function sceneProgress(p, f){
+  const op = fadeWindow(p);
+  const fp = fontFor();
+  const value = Math.max(0, Math.min(100, parseFloat(f.value)||0));
+  const growP = easeOutCubic(Math.min(1, p/0.6));
+  if (f.label) plainText(f.label, W/2, H*0.36, Math.min(28, W*0.028), 700, '#9aa6b5', op, fp, 'center');
+  const barW = Math.min(880, W*0.78), barH = Math.min(54, H*0.066);
+  const bx = W/2 - barW/2, by = H*0.46;
+  // track
+  ctx.save(); ctx.globalAlpha = op;
+  roundRect(ctx, bx, by, barW, barH, barH/2);
+  ctx.fillStyle = '#1e2530'; ctx.fill();
+  ctx.restore();
+  // fill
+  const fillW = Math.max(0, barW * (value/100) * growP);
+  if (fillW > 2){
+    ctx.save(); ctx.globalAlpha = op;
+    roundRect(ctx, bx, by, fillW, barH, barH/2);
+    const grad = ctx.createLinearGradient(bx,0,bx+barW,0);
+    grad.addColorStop(0, THEME.primary); grad.addColorStop(1, THEME.accent);
+    ctx.fillStyle = grad; ctx.shadowColor = THEME.primary; ctx.shadowBlur = 22; ctx.fill();
+    ctx.restore();
+  }
+  // count-up percentage
+  const countP = easeOutCubic(Math.min(1, p/0.5));
+  const shown = value*countP;
+  const pctText = fmtNum(shown, String(f.value||'').includes('.')?1:0, f.unit?' '+f.unit:'');
+  const valSize = Math.min(44, W*0.042);
+  glowText(pctText, W/2, by + barH + valSize*1.4, valSize, 800, THEME.primary, op, 20, fontMono(), 'center');
+}
+
+// FAQ — question first, then answer fades in below
+function sceneFaq(p, f){
+  const op = fadeWindow(p);
+  const fp = fontFor();
+  const qOp = op;
+  const aStagger = p > 0.5 ? easeOutCubic(Math.min(1,(p-0.5)/0.35)) : 0;
+  const aOp = op*aStagger;
+  // question rises slightly when answer appears
+  const qRise = aStagger * 50;
+  const qSize = fitFont(f.question||'', W*0.84, Math.min(46, W*0.044), fp, 800, 20);
+  // Q marker
+  ctx.save(); ctx.globalAlpha = qOp;
+  ctx.font = `900 ${Math.min(48,W*0.045)}px "Inter"`; ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillStyle = THEME.primary; ctx.shadowColor = THEME.primary; ctx.shadowBlur = 16;
+  ctx.fillText('Q', W/2 - (ctx.measureText(f.question||'').width>W*0.7?W*0.42:0), H*0.32 - qRise - qSize*0.4);
+  ctx.restore();
+  gradientText(f.question||'', W/2, H*0.36 - qRise, qSize, 800, THEME.primary, THEME.accent, qOp, fp, 'center');
+  // divider
+  const divOp = op*Math.min(1, Math.max(0,(p-0.3)/0.2));
+  ctx.save(); ctx.globalAlpha = divOp;
+  ctx.strokeStyle = '#2a3441'; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(W*0.3, H*0.48); ctx.lineTo(W*0.7, H*0.48); ctx.stroke();
+  ctx.restore();
+  // answer
+  if (f.answer){
+    const aSize = Math.min(32, W*0.03);
+    const aLines = wrapText(f.answer, W*0.78, fp, aSize, 500);
+    const lh = Math.round(aSize*1.3);
+    const startY = H*0.58 + (1-aStagger)*24;
+    aLines.forEach((ln,i) => {
+      plainText(ln, W/2, startY+i*lh, aSize, 500, '#cdd5e0', aOp, fp, 'center');
+    });
+  }
+}
+
+// Timeline — horizontal line with staged milestones
+function sceneTimeline(p, f){
+  const op = fadeWindow(p, 0.12, 0.15);
+  const fp = fontFor();
+  const rtl = isRTL();
+  const titleSize = fitFont(f.title||'', W*0.84, Math.min(34, W*0.032), fp, 800, 18);
+  gradientText(f.title||'', W/2, H*0.1, titleSize, 800, THEME.primary, THEME.accent, op, fp, 'center');
+  let steps = [];
+  try { steps = typeof f.steps === 'string' ? JSON.parse(f.steps) : (f.steps||[]); } catch(e){ steps = []; }
+  if (!Array.isArray(steps) || !steps.length) return;
+  const lineY = H*0.5;
+  const startX = W*0.1, endX = W*0.9;
+  const span = endX - startX;
+  const n = steps.length;
+  const stepGap = n>1 ? span/(n-1) : 0;
+  // base line
+  const lineGrow = easeOutCubic(Math.min(1, p/0.4));
+  const drawnEnd = rtl ? startX + (startX-endX)*0 : startX + span*lineGrow;
+  ctx.save(); ctx.globalAlpha = op*0.6;
+  ctx.strokeStyle = '#2a3441'; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.moveTo(startX, lineY); ctx.lineTo(endX, lineY); ctx.stroke();
+  ctx.restore();
+  // animated colored line
+  ctx.save(); ctx.globalAlpha = op;
+  ctx.strokeStyle = THEME.primary; ctx.lineWidth = 3; ctx.shadowColor = THEME.primary; ctx.shadowBlur = 14;
+  ctx.beginPath();
+  if (rtl){ ctx.moveTo(endX, lineY); ctx.lineTo(endX - span*lineGrow, lineY); }
+  else { ctx.moveTo(startX, lineY); ctx.lineTo(startX + span*lineGrow, lineY); }
+  ctx.stroke();
+  ctx.restore();
+  const dotR = Math.min(16, W*0.016);
+  const labelSize = Math.min(26, W*0.026);
+  const textSize = Math.min(20, W*0.02);
+  steps.forEach((s,i) => {
+    const frac = n>1 ? i/(n-1) : 0.5;
+    const dotX = rtl ? endX - frac*span : startX + frac*span;
+    const stagger = easeOutBack(Math.min(1, Math.max(0, (p-0.2-i*0.12)/0.35)));
+    const localOp = op*Math.min(1, stagger*2);
+    // dot
+    ctx.save(); ctx.globalAlpha = localOp;
+    ctx.beginPath(); ctx.arc(dotX, lineY, dotR, 0, Math.PI*2);
+    ctx.fillStyle = THEME.primary; ctx.shadowColor = THEME.primary; ctx.shadowBlur = 18; ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.beginPath(); ctx.arc(dotX, lineY, dotR*0.5, 0, Math.PI*2);
+    ctx.fillStyle = '#04121a'; ctx.fill();
+    ctx.restore();
+    // label above, text below — alternate sides to reduce overlap when dense
+    const above = i % 2 === 0;
+    plainText(s.label||'', dotX, lineY + (above?-50:50), labelSize, 800, THEME.accent, localOp, fontMono(), 'center');
+    const tLines = wrapText(s.text||'', Math.max(120, span/n - 20), fp, textSize, 500);
+    const tBase = lineY + (above?-50-labelSize-8:50+labelSize*0.5+8);
+    tLines.forEach((ln,li) => {
+      plainText(ln, dotX, tBase + (above?-(li+1)*Math.round(textSize*1.2):li*Math.round(textSize*1.2)),
+                textSize, 500, '#cdd5e0', localOp, fp, 'center');
+    });
+  });
+}
+
 // ============================================================ timeline + playback
 let timeline = [];
 
@@ -1700,6 +2145,9 @@ function drawScene(type, p, fields){
     comparison: sceneComparison, quote: sceneQuote, outro: sceneOutro,
     benchmark_model: sceneBenchmarkModel, benchmark_hero: sceneBenchmarkHero,
     benchmark_secondary: sceneBenchmarkSecondary, benchmark_leaderboard: sceneBenchmarkLeaderboard,
+    lower_third: sceneLowerThird, cta: sceneCta, testimonial: sceneTestimonial, checklist: sceneChecklist,
+    bar_chart: sceneBarChart, countdown: sceneCountdown, donut: sceneDonut, progress: sceneProgress,
+    faq: sceneFaq, timeline: sceneTimeline,
   };
   const fn = DISPATCH[type];
   if (fn) fn(p, fields);
@@ -1788,6 +2236,20 @@ function sceneSpeakableText(type, f){
   if (type==='outro') return [f.title, f.subtitle].filter(Boolean).join('. ');
   if (type==='benchmark_model') return [f.model, f.gpu, f.backend].filter(Boolean).join(' ');
   if (type==='benchmark_hero') return [f.model, fmtNum(parseFloat(f.avg_tokens_per_sec),1),'tokens per second'].filter(Boolean).join(' ');
+  if (type==='lower_third') return [f.name, f.role].filter(Boolean).join('. ');
+  if (type==='cta') return [f.button, f.subtitle].filter(Boolean).join('. ');
+  if (type==='testimonial') return [f.text, f.name, f.role].filter(Boolean).join('. ');
+  if (type==='checklist') return [f.title, ...(Array.isArray(f.items)?f.items:[])].filter(Boolean).join('. ');
+  if (type==='bar_chart') return [f.title].filter(Boolean).join(' ');
+  if (type==='countdown'){
+    const s = Math.max(1, parseInt(f.start)||3); const nums = [];
+    for (let n=s;n>=1;n--) nums.push(String(n));
+    return [...nums, f.text||''].filter(Boolean).join('. ');
+  }
+  if (type==='donut') return [f.label, f.value, f.unit].filter(Boolean).join(' ');
+  if (type==='progress') return [f.label, f.value, f.unit].filter(Boolean).join(' ');
+  if (type==='faq') return [f.question, f.answer].filter(Boolean).join('. ');
+  if (type==='timeline') return [f.title].filter(Boolean).join(' ');
   return '';
 }
 let lastSpokenIdx = -1;
@@ -2423,6 +2885,8 @@ const I18N = {
     typeIntro:'Intro', typeTitle:'Title', typeBullet:'Bullet list', typeStat:'Big stat',
     typeComparison:'Comparison (A vs B)', typeQuote:'Quote', typeOutro:'Outro / CTA',
     typeBenchModel:'Bench: Model', typeBenchHero:'Bench: Hero Stats', typeBenchSecondary:'Bench: Telemetry', typeBenchLeaderboard:'Bench: Leaderboard',
+    typeLowerThird:'Lower Third', typeCta:'Call to Action', typeTestimonial:'Testimonial', typeChecklist:'Checklist',
+    typeBarChart:'Bar Chart', typeCountdown:'Countdown', typeDonut:'Donut Chart', typeProgress:'Progress Bar', typeFaq:'FAQ / Q&A', typeTimeline:'Timeline',
     saveProjectBtn:'💾 Save project', loadProjectBtn:'📂 Load project',
     batchTitle:'Batch Export',
     batchNote:'Paste multiple scripts, each separated by a line with just "---". Each one gets its own AI-generated scenes and its own exported file.',
@@ -2472,6 +2936,8 @@ const I18N = {
     typeIntro:'مقدمة', typeTitle:'عنوان', typeBullet:'قائمة نقاط', typeStat:'رقم/إحصائية كبيرة',
     typeComparison:'مقارنة (A vs B)', typeQuote:'اقتباس', typeOutro:'خاتمة / دعوة لإجراء',
     typeBenchModel:'معيار: عنوان النموذج', typeBenchHero:'معيار: أرقام بارزة', typeBenchSecondary:'معيار: تتبع تفصيلي', typeBenchLeaderboard:'معيار: لوحة المتصدرين',
+    typeLowerThird:'شريط سفلي', typeCta:'دعوة لإجراء', typeTestimonial:'رأي / شهادة', typeChecklist:'قائمة تحقق',
+    typeBarChart:'رسم أعمدة', typeCountdown:'عد تنازلي', typeDonut:'رسم دائري', typeProgress:'شريط تقدم', typeFaq:'سؤال وجواب', typeTimeline:'خط زمني',
     saveProjectBtn:'💾 حفظ المشروع', loadProjectBtn:'📂 تحميل مشروع',
     batchTitle:'تصدير دفعة',
     batchNote:'الصق أكتر من سكريبت، كل واحد مفصول بسطر فيه "---" بس. كل سكريبت هياخد مشاهده الخاصة من الذكاء الاصطناعي وملف تصدير منفصل.',
