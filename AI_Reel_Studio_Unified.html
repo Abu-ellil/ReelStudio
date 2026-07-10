@@ -401,6 +401,21 @@
       </div>
 
       <div class="panel">
+        <div class="panel-title">Solid Color / Chroma Key</div>
+        <div class="note" style="margin-bottom:6px;">Flat solid background (no vignette/dim) for chroma keying or overlaying scenes on video.</div>
+        <div class="row" style="align-items:center;gap:6px;margin-bottom:6px;">
+          <input type="color" id="globalBgColor" value="#00ff00" style="width:46px;height:30px;padding:0;border:1px solid var(--border);background:none;cursor:pointer;">
+          <button class="btn-ghost btn-small" id="globalBgColorOnBtn" style="width:auto;">On</button>
+          <button class="btn-ghost btn-small" id="globalBgColorOffBtn" style="width:auto;">Off</button>
+        </div>
+        <div class="tpl-row" id="globalChromaSwatches"></div>
+        <div class="row" style="margin-top:8px;">
+          <button class="btn-ghost btn-small" id="globalBgColorApplyAllBtn" style="width:auto;">Apply to all scenes</button>
+        </div>
+        <div class="note" id="globalBgColorStatus" style="margin-top:6px;">Off — scene background used.</div>
+      </div>
+
+      <div class="panel">
         <div class="panel-title" data-i18n="brandTitle">Brand Kit</div>
         <label data-i18n="templateLabel">Template</label>
         <div class="tpl-row" id="tplRow"></div>
@@ -643,6 +658,18 @@ function updateUndoRedoButtons(){
 
 // ============================================================ per-scene background overrides
 let sceneBgMedia = {};
+
+// ============================================================ solid color / chroma backgrounds
+// globalBgColor: لون سوليد يطبّق على كل المشاهد (null = معطّل).
+// لون المشهد يُخزَّن على الكائن نفسه (scene.bgColor) فيسبق العام.
+let globalBgColor = null;
+// أزرار الكروما السريعة — مستخدمة في واجهة الإعداد العام وواجهة كل مشهد
+const CHROMA_SWATCHES = [
+  { name:'Chroma Green', hex:'#00ff00' },
+  { name:'Chroma Blue',  hex:'#0000ff' },
+  { name:'Black',        hex:'#000000' },
+  { name:'White',        hex:'#ffffff' },
+];
 
 // ============================================================ background pan
 let bgPanX = 0, bgPanY = 0;
@@ -1292,7 +1319,15 @@ function drawBgMedia(sceneId){
   return true;
 }
 
-function drawBackground(t, sceneId){
+function drawBackground(t, sceneId, activeColor){
+  // solid color / chroma mode: تعبئة نقيّة ثم خروج فوري (لا vignette/dim/media/particles)
+  // لضمان مفتاح chroma نظيف تماماً. المحتوى يُرسم فوقه لاحقاً في drawAtTime.
+  if (activeColor){
+    ctx.fillStyle = activeColor;
+    ctx.fillRect(0,0,W,H);
+    return;
+  }
+
   ctx.fillStyle = '#070a0f';
   ctx.fillRect(0,0,W,H);
 
@@ -1472,8 +1507,6 @@ function sceneBullet(p, f){
   const items = Array.isArray(f.items) ? f.items : [];
   const titleSize = fitFont(f.title||'', W*0.84, Math.min(38,W*0.035), fp, 800, 18);
   gradientText(f.title||'', W/2, H*0.09, titleSize, 800, THEME.primary, THEME.accent, op, fp, 'center');
-  const startY = H*0.17;
-  const gap = Math.min(110, (H-startY-120)/Math.max(items.length,1));
   const circleOffset = Math.min(540, W*0.26);
   const textOffset = Math.min(490, W*0.235);
   const numSize = Math.min(26, W*0.026);
@@ -1481,6 +1514,13 @@ function sceneBullet(p, f){
   const textSize = Math.min(34, W*0.034);
   const lineH = Math.round(textSize*1.24);
   const maxTextWidth = Math.max(200, W - textOffset - 70);
+  // وسّط مجموعة العناصر عمودياً (نفس نمط sceneBarChart) بدل تثبيتها بالأعلى
+  const topY = H*0.18, bottomMargin = H*0.10;
+  const availH = H - topY - bottomMargin;
+  const gap = Math.min(140, availH/Math.max(items.length,1));
+  const itemH = Math.max(numR*2, lineH);
+  const totalH = Math.max(items.length-1,0)*gap + itemH;
+  const startY = topY + Math.max(0, (availH - totalH)/2);
   items.forEach((item,i) => {
     const stagger = Math.min(1, Math.max(0, (p-0.1-i*0.08)/0.35));
     const localOp = op*easeOutCubic(stagger);
@@ -1529,7 +1569,9 @@ function sceneComparison(p, f){
   const cw = Math.max(120, fit);
   const leftX = W/2 - cw - vsGap/2;
   const rightX = W/2 + vsGap/2;
-  const cardY = H/2 - cardH/2 + H*0.04;
+  // وسّط البطاقتين عمودياً داخل المنطقة أسفل العنوان بدل ميلها للأعلى
+  const topY = H*0.18, bottomMargin = H*0.08;
+  const cardY = topY + Math.max(0, ((H - topY - bottomMargin) - cardH)/2);
   drawCompCard(leftX, cardY, cw, cardH, f.left_label, f.left_value, THEME.primary, leftOp);
   drawCompCard(rightX, cardY, cw, cardH, f.right_label, f.right_value, THEME.accent, rightOp);
   ctx.save(); ctx.globalAlpha = op;
@@ -1805,7 +1847,15 @@ function sceneTestimonial(p, f){
   const avStagger = easeOutCubic(Math.min(1, p/0.3));
   const avR = Math.min(70, W*0.068);
   const avX = rtl ? W/2 + avR + 20 : W/2 - avR - 20;
-  const avY = H*0.26;
+  // وسّط كتلة (أفاتار + نجوم + صندوق) عمودياً بدل ميلها للأعلى، مع الإبقاء على المسافات النسبية الأصلية
+  const boxH = Math.min(220, H*0.24);
+  const avY0 = H*0.26, starY0 = avY0 + avR + 36, by0 = H*0.52;
+  const blockTop = avY0 - avR;
+  const blockBottom = by0 + boxH;
+  const dy = Math.max(H*0.12, (H - (blockBottom - blockTop))/2) - blockTop;
+  const avY = avY0 + dy;
+  const starY = starY0 + dy;
+  const by = by0 + dy;
   const initials = (f.name||'').split(/\s+/).filter(Boolean).map(w=>w[0]).slice(0,2).join('').toUpperCase() || '?';
   ctx.save(); ctx.globalAlpha = op*avStagger;
   ctx.beginPath(); ctx.arc(avX, avY, avR, 0, Math.PI*2);
@@ -1824,7 +1874,6 @@ function sceneTestimonial(p, f){
   // stars
   const starStagger = easeOutCubic(Math.min(1, Math.max(0,(p-0.3)/0.3)));
   const rating = Math.max(0, Math.min(5, parseInt(f.rating)||0));
-  const starY = avY + avR + 36;
   const starSize = Math.min(34, W*0.034);
   ctx.save(); ctx.globalAlpha = op*starStagger;
   ctx.font = `${starSize}px "Inter"`; ctx.textAlign='center'; ctx.textBaseline='middle';
@@ -1838,8 +1887,8 @@ function sceneTestimonial(p, f){
   // quote box
   const qStagger = easeOutCubic(Math.min(1, Math.max(0,(p-0.4)/0.4)));
   const qOp = op*qStagger;
-  const boxW = Math.min(820, W*0.8), boxH = Math.min(220, H*0.24);
-  const bx = W/2 - boxW/2, by = H*0.52;
+  const boxW = Math.min(820, W*0.8);
+  const bx = W/2 - boxW/2;
   ctx.save(); ctx.globalAlpha = qOp;
   roundRect(ctx, bx, by, boxW, boxH, 14);
   ctx.strokeStyle = THEME.primary; ctx.lineWidth = 1.5; ctx.stroke();
@@ -1861,8 +1910,6 @@ function sceneChecklist(p, f){
   const items = Array.isArray(f.items) ? f.items : [];
   const titleSize = fitFont(f.title||'', W*0.84, Math.min(38,W*0.035), fp, 800, 18);
   gradientText(f.title||'', W/2, H*0.09, titleSize, 800, THEME.primary, THEME.accent, op, fp, 'center');
-  const startY = H*0.17;
-  const gap = Math.min(110, (H-startY-120)/Math.max(items.length,1));
   const circleOffset = Math.min(540, W*0.26);
   const textOffset = Math.min(490, W*0.235);
   const checkSize = Math.min(26, W*0.026);
@@ -1870,6 +1917,13 @@ function sceneChecklist(p, f){
   const textSize = Math.min(34, W*0.034);
   const lineH = Math.round(textSize*1.24);
   const maxTextWidth = Math.max(200, W - textOffset - 70);
+  // وسّط مجموعة العناصر عمودياً (نفس نمط sceneBarChart) بدل تثبيتها بالأعلى
+  const topY = H*0.18, bottomMargin = H*0.10;
+  const availH = H - topY - bottomMargin;
+  const gap = Math.min(140, availH/Math.max(items.length,1));
+  const itemH = Math.max(checkR*2, lineH);
+  const totalH = Math.max(items.length-1,0)*gap + itemH;
+  const startY = topY + Math.max(0, (availH - totalH)/2);
   items.forEach((item,i) => {
     const stagger = Math.min(1, Math.max(0, (p-0.1-i*0.08)/0.35));
     const localOp = op*easeOutCubic(stagger);
@@ -2126,6 +2180,7 @@ function buildTimeline(){
     type: s.type,
     dur: s.dur * pace,
     fields: s.fields,
+    bgColor: s.bgColor || '',   // لون سوليد لكل مشهد (chroma) — فارغ = معطّل
     label: `${s.type}`,
   }));
   const total = timeline.reduce((a,s)=>a+s.dur,0);
@@ -2190,7 +2245,7 @@ function drawCaptions(type, fields, p){
 }
 
 function drawAtTime(elapsed){
-  if (!timeline.length){ drawBackground(elapsed); plainText('Add scenes to begin', W/2, H/2, 34, 600, '#48505e', 1, 'Inter', 'center'); drawLogo(); return; }
+  if (!timeline.length){ drawBackground(elapsed, null, globalBgColor); plainText('Add scenes to begin', W/2, H/2, 34, 600, '#48505e', 1, 'Inter', 'center'); drawLogo(); return; }
   let acc = 0;
   let current = timeline[timeline.length-1];
   let p = 1;
@@ -2202,7 +2257,9 @@ function drawAtTime(elapsed){
     }
     acc += scene.dur;
   }
-  drawBackground(elapsed, current.id);
+  // أولوية اللون السوليد: تجاوز المشهد > الإعداد العام
+  const activeColor = current.bgColor || globalBgColor || null;
+  drawBackground(elapsed, current.id, activeColor);
   drawScene(current.type, p, current.fields);
   drawCaptions(current.type, current.fields, p);
   document.getElementById('sceneLabel').textContent = current.label;
@@ -2545,6 +2602,59 @@ document.getElementById('bgPanX').addEventListener('input', (e) => { bgPanX = e.
 document.getElementById('bgPanY').addEventListener('input', (e) => { bgPanY = e.target.value/100; drawAtTime(0); });
 document.getElementById('bgScale').addEventListener('input', (e) => { bgScale = e.target.value/100; drawAtTime(0); });
 document.getElementById('bgDim').addEventListener('input', (e) => { bgDim = e.target.value/100; drawAtTime(0); });
+
+// ============================================================ global solid color / chroma wiring
+function renderGlobalChromaSwatches(){
+  const row = document.getElementById('globalChromaSwatches');
+  if (!row) return;
+  row.innerHTML = '';
+  CHROMA_SWATCHES.forEach(sw => {
+    const btn = document.createElement('button');
+    btn.className = 'tpl-swatch';
+    btn.style.background = sw.hex;
+    btn.style.width = '34px'; btn.style.height = '34px';
+    btn.title = sw.name;
+    btn.addEventListener('click', () => {
+      document.getElementById('globalBgColor').value = sw.hex;
+      globalBgColor = sw.hex;
+      updateGlobalBgColorStatus();
+      scheduleProjectSave();
+      drawAtTime(0);
+    });
+    row.appendChild(btn);
+  });
+}
+renderGlobalChromaSwatches();
+function updateGlobalBgColorStatus(){
+  const el = document.getElementById('globalBgColorStatus');
+  if (el) el.textContent = globalBgColor ? `On — ${globalBgColor.toUpperCase()} (all scenes)` : 'Off — scene background used.';
+}
+document.getElementById('globalBgColor').addEventListener('input', (e) => {
+  // تحديث فوري للقيمة لكن دون تفعيل حتى يضغط On (تجنّب التفعيل العرضي أثناء اختيار اللون)
+  if (globalBgColor) { globalBgColor = e.target.value; updateGlobalBgColorStatus(); scheduleProjectSave(); drawAtTime(0); }
+});
+document.getElementById('globalBgColorOnBtn').addEventListener('click', () => {
+  globalBgColor = document.getElementById('globalBgColor').value;
+  updateGlobalBgColorStatus();
+  scheduleProjectSave();
+  drawAtTime(0);
+});
+document.getElementById('globalBgColorOffBtn').addEventListener('click', () => {
+  globalBgColor = null;
+  updateGlobalBgColorStatus();
+  scheduleProjectSave();
+  drawAtTime(0);
+});
+document.getElementById('globalBgColorApplyAllBtn').addEventListener('click', () => {
+  if (!scenes.length) return;
+  const color = document.getElementById('globalBgColor').value;
+  pushHistory();
+  scenes.forEach(s => { s.bgColor = color; });
+  renderSceneEditor();
+  buildTimeline();
+  scheduleProjectSave();
+  drawAtTime(0);
+});
 
 // ============================================================ brand kit wiring
 function renderTemplateSwatches(){
