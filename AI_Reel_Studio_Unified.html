@@ -6,6 +6,7 @@
 <title>AI Reel Studio — Unified</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800;900&family=Cairo:wght@400;600;700;800&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,500,1,0&display=swap');
 
   :root{
     --bg:#0a0e14; --panel:#11161f; --panel2:#0d1219; --border:#1e2530;
@@ -128,6 +129,10 @@
   .scene-type-progress{background:rgba(95,227,138,0.15);color:var(--green);}
   .scene-type-faq{background:rgba(63,208,255,0.15);color:var(--cyan);}
   .scene-type-timeline{background:rgba(183,148,246,0.15);color:var(--purple);}
+  .scene-type-like{background:rgba(95,227,138,0.15);color:var(--green);}
+  .scene-type-share{background:rgba(63,208,255,0.15);color:var(--cyan);}
+  .scene-type-subscribe{background:rgba(255,107,107,0.15);color:var(--red);}
+  .scene-type-engagement{background:rgba(255,180,84,0.15);color:var(--amber);}
   .scene-card-body{display:flex;flex-direction:column;gap:4px;}
   .scene-card-body textarea{min-height:30px;font-size:11px;padding:5px 7px;}
   .scene-card-controls{display:flex;gap:4px;margin-top:6px;}
@@ -537,6 +542,10 @@
               <option value="progress" data-i18n="typeProgress">Progress Bar</option>
               <option value="faq" data-i18n="typeFaq">FAQ / Q&amp;A</option>
               <option value="timeline" data-i18n="typeTimeline">Timeline</option>
+              <option value="like" data-i18n="typeLike">Like (engagement)</option>
+              <option value="share" data-i18n="typeShare">Share (engagement)</option>
+              <option value="subscribe" data-i18n="typeSubscribe">Subscribe (engagement)</option>
+              <option value="engagement" data-i18n="typeEngagement">Engagement (Like+Share+Sub)</option>
             </select>
           </div>
         </div>
@@ -682,6 +691,7 @@ const DEFAULT_DURATIONS = {
   benchmark_model:2.3, benchmark_hero:4.2, benchmark_secondary:4.8, benchmark_leaderboard:5.5,
   lower_third:3.0, cta:3.2, testimonial:4.0, checklist:4.5, bar_chart:4.8,
   countdown:4.0, donut:3.2, progress:3.0, faq:4.0, timeline:4.5,
+  like:3.2, share:3.2, subscribe:3.6, engagement:4.2,
 };
 
 const DEFAULT_FIELDS = {
@@ -706,6 +716,10 @@ const DEFAULT_FIELDS = {
   progress:{label:'Project completion', value:'65', unit:'%'},
   faq:{question:'What is Reel Studio?', answer:'A tool to create animated reels from your content in minutes.'},
   timeline:{title:'Our Journey', steps:'[{"label":"2019","text":"Founded"},{"label":"2021","text":"Series A"},{"label":"2023","text":"1M users"},{"label":"2025","text":"Global"}]'},
+  like:{text:'If you found this helpful, smash that like button!', count:'10K'},
+  share:{text:'Share this with someone who needs to see it', count:'5K'},
+  subscribe:{text:'Subscribe for more content like this', button:'Subscribe'},
+  engagement:{title:'Enjoyed this?', like_text:'Like', share_text:'Share', subscribe_text:'Subscribe', show_like:'true', show_share:'true', show_subscribe:'true'},
 };
 const SCENE_TYPE_NAMES = {
   intro:'Intro', title:'Title', bullet:'Bullet', stat:'Stat',
@@ -713,6 +727,7 @@ const SCENE_TYPE_NAMES = {
   benchmark_model:'Bench: Model', benchmark_hero:'Bench: Hero', benchmark_secondary:'Bench: Telemetry', benchmark_leaderboard:'Bench: Leaderboard',
   lower_third:'Lower Third', cta:'CTA', testimonial:'Testimonial', checklist:'Checklist',
   bar_chart:'Bar Chart', countdown:'Countdown', donut:'Donut', progress:'Progress', faq:'FAQ', timeline:'Timeline',
+  like:'Like', share:'Share', subscribe:'Subscribe', engagement:'Engagement',
 };
 
 // ============================================================ structure templates
@@ -1891,6 +1906,164 @@ function sceneCta(p, f){
   }
 }
 
+// ---- Engagement scene helpers (Material Symbols glyphs rendered on canvas) ----
+// Draw a Material Symbols Rounded glyph centered at (cx,cy).
+// `s` is the target pixel size of the icon square (glyph fills ~ s×s).
+const ICON_FONT = 'Material Symbols Rounded';
+function drawMaterialIcon(name, cx, cy, s, color, opacity){
+  ctx.save();
+  ctx.globalAlpha = opacity;
+  ctx.fillStyle = color;
+  ctx.font = `500 ${s}px "${ICON_FONT}"`;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(name, cx, cy);
+  ctx.restore();
+}
+// Like — filled thumbs-up
+function drawLikeIcon(cx, cy, s, color, opacity){
+  drawMaterialIcon('thumb_up', cx, cy, s, color, opacity);
+}
+// Share — paper plane (send)
+function drawShareIcon(cx, cy, s, color, opacity){
+  drawMaterialIcon('send', cx, cy, s, color, opacity);
+}
+// Subscribe — bell (notifications)
+function drawBellIcon(cx, cy, s, color, opacity){
+  drawMaterialIcon('notifications', cx, cy, s, color, opacity);
+}
+
+// Like — a thumbs-up that pops in and pulses, with an optional count
+function sceneLike(p, f){
+  const op = fadeWindow(p);
+  const fp = fontFor();
+  const pop = easeOutBack(Math.min(1, p/0.4));          // 0..1 with overshoot
+  const pulse = 1 + Math.sin(p*Math.PI*3)*0.06;         // gentle breathing
+  const iconS = Math.min(W,H)*0.11 * pop * pulse;
+  const cx = W/2, cy = H*0.40;
+  // glow ring
+  ctx.save(); ctx.globalAlpha = op*0.5;
+  ctx.beginPath(); ctx.arc(cx, cy, iconS*1.7, 0, Math.PI*2);
+  ctx.fillStyle = 'rgba(95,227,138,0.10)'; ctx.fill();
+  ctx.restore();
+  drawLikeIcon(cx, cy, iconS, THEME.accent, op);
+  // count badge
+  if (f.count){
+    const cnt = String(f.count).trim();
+    const cntText = cnt.startsWith('+') ? cnt : '+'+cnt;
+    const cSize = Math.min(40, W*0.04);
+    glowText(cntText, W/2, H*0.70, cSize, 800, THEME.accent, op, 26, fontMono(), 'center');
+  }
+  if (f.text){
+    const tSize = fitFont(f.text, W*0.86, Math.min(30, W*0.03), fp, 600, 16);
+    plainText(f.text, W/2, H*0.84, tSize, 600, '#e8edf4', op*0.95, fp, 'center');
+  }
+}
+
+// Share — a paper-plane that drifts diagonally, with optional count
+function sceneShare(p, f){
+  const op = fadeWindow(p);
+  const fp = fontFor();
+  const pop = easeOutBack(Math.min(1, p/0.4));
+  // subtle diagonal drift toward top-right (the "sent" direction)
+  const drift = easeOutCubic(Math.min(1, p/0.9)) * Math.min(W*0.05, 40);
+  const iconS = Math.min(W,H)*0.11 * pop;
+  const cx = W/2 + drift, cy = H*0.40 - drift*0.6;
+  ctx.save(); ctx.globalAlpha = op*0.5;
+  ctx.beginPath(); ctx.arc(cx, cy, iconS*1.7, 0, Math.PI*2);
+  ctx.fillStyle = 'rgba(63,208,255,0.10)'; ctx.fill();
+  ctx.restore();
+  drawShareIcon(cx, cy, iconS, THEME.primary, op);
+  if (f.count){
+    const cnt = String(f.count).trim();
+    const cntText = cnt.startsWith('+') ? cnt : '+'+cnt;
+    const cSize = Math.min(40, W*0.04);
+    glowText(cntText, W/2, H*0.70, cSize, 800, THEME.primary, op, 26, fontMono(), 'center');
+  }
+  if (f.text){
+    const tSize = fitFont(f.text, W*0.86, Math.min(30, W*0.03), fp, 600, 16);
+    plainText(f.text, W/2, H*0.84, tSize, 600, '#e8edf4', op*0.95, fp, 'center');
+  }
+}
+
+// Subscribe — a bell that rings (rotates), with a subscribe button
+function sceneSubscribe(p, f){
+  const op = fadeWindow(p);
+  const fp = fontFor();
+  const pop = easeOutBack(Math.min(1, p/0.4));
+  // ringing: alternating rotation that decays toward the end of the scene
+  const ringDecay = Math.max(0, 1 - easeOutCubic(Math.min(1, p/0.95)));
+  const ring = Math.sin(p*Math.PI*8) * 0.18 * ringDecay;
+  const iconS = Math.min(W,H)*0.11 * pop;
+  const cx = W/2, cy = H*0.36;
+  ctx.save(); ctx.globalAlpha = op*0.5;
+  ctx.beginPath(); ctx.arc(cx, cy, iconS*1.7, 0, Math.PI*2);
+  ctx.fillStyle = 'rgba(255,107,107,0.10)'; ctx.fill();
+  ctx.restore();
+  ctx.save(); ctx.translate(cx, cy); ctx.rotate(ring); ctx.translate(-cx, -cy);
+  drawBellIcon(cx, cy, iconS, THEME.primary, op);
+  ctx.restore();
+  // button
+  const btnText = f.button || 'Subscribe';
+  const btnSize = Math.min(30, W*0.028);
+  ctx.font = `800 ${btnSize}px "${fp}"`;
+  const textW = ctx.measureText(btnText).width;
+  const btnW = Math.min(W*0.6, textW + Math.min(110, W*0.12));
+  const btnH = Math.min(72, H*0.1);
+  const bx = W/2 - btnW/2, by = H*0.66;
+  const pulse = 1 + Math.sin(p*Math.PI*4)*0.03;
+  ctx.save(); ctx.globalAlpha = op;
+  ctx.shadowColor = THEME.primary; ctx.shadowBlur = 22;
+  roundRect(ctx, bx-btnW*(pulse-1)/2, by-btnH*(pulse-1)/2, btnW*pulse, btnH*pulse, btnH*0.22);
+  ctx.fillStyle = THEME.primary; ctx.fill();
+  ctx.restore();
+  ctx.save(); ctx.globalAlpha = op;
+  ctx.font = `800 ${btnSize}px "${fp}"`; ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillStyle = '#04121a'; ctx.fillText(btnText, W/2, by+btnH/2);
+  ctx.restore();
+  if (f.text){
+    const tSize = fitFont(f.text, W*0.86, Math.min(24, W*0.024), fp, 600, 14);
+    plainText(f.text, W/2, H*0.86, tSize, 600, '#e8edf4', op*0.9, fp, 'center');
+  }
+}
+
+// Engagement — Like + Share + Subscribe together, staggered in, each togglable
+function sceneEngagement(p, f){
+  const op = fadeWindow(p);
+  const fp = fontFor();
+  const showLike = String(f.show_like) !== 'false';
+  const showShare = String(f.show_share) !== 'false';
+  const showSub = String(f.show_subscribe) !== 'false';
+  // gather the visible actions in order
+  const actions = [];
+  if (showLike)    actions.push({key:'like',    icon:drawLikeIcon,  color:THEME.accent,  label:f.like_text||'Like'});
+  if (showShare)   actions.push({key:'share',   icon:drawShareIcon, color:THEME.primary, label:f.share_text||'Share'});
+  if (showSub)     actions.push({key:'subscribe',icon:drawBellIcon, color:THEME.primary, label:f.subscribe_text||'Subscribe'});
+  const n = Math.max(actions.length, 1);
+  const titleSize = fitFont(f.title||'', W*0.86, Math.min(44, W*0.042), fp, 800, 18);
+  glowGradientText(f.title||'', W/2, H*0.24, titleSize, 800, THEME.primary, THEME.accent, op, 26, fp, 'center');
+  // evenly space icons across the width
+  const rowTop = H*0.40, rowBottom = H*0.70;
+  const rowAvail = rowBottom - rowTop;
+  const gap = Math.min(W*0.34, rowAvail);
+  const iconS = Math.min(W*0.075, H*0.085);
+  const labelSize = Math.min(24, W*0.024);
+  actions.forEach((a, i) => {
+    const stagger = easeOutBack(Math.min(1, Math.max(0, (p - 0.12 - i*0.12)/0.4)));
+    const localOp = op*stagger;
+    const cx = n===1 ? W/2 : W/2 + (i - (n-1)/2)*gap;
+    const cy = H*0.52;
+    // soft glow disc behind each icon
+    ctx.save(); ctx.globalAlpha = localOp*0.45;
+    ctx.beginPath(); ctx.arc(cx, cy, iconS*1.8, 0, Math.PI*2);
+    ctx.fillStyle = 'rgba(255,255,255,0.06)'; ctx.fill();
+    ctx.restore();
+    a.icon(cx, cy, iconS*stagger, a.color, localOp);
+    plainText(a.label, cx, cy+iconS+Math.min(34, W*0.034), labelSize, 700, '#e8edf4', localOp, fp, 'center');
+  });
+  // closing line
+  plainText('Thank you for watching!', W/2, H*0.88, Math.min(22, W*0.022), 600, THEME.primary, op*0.85, fontMono(), 'center');
+}
+
 // Testimonial — avatar initials, name, stars, quote box
 function sceneTestimonial(p, f){
   const op = fadeWindow(p);
@@ -2256,6 +2429,7 @@ function drawScene(type, p, fields){
     lower_third: sceneLowerThird, cta: sceneCta, testimonial: sceneTestimonial, checklist: sceneChecklist,
     bar_chart: sceneBarChart, countdown: sceneCountdown, donut: sceneDonut, progress: sceneProgress,
     faq: sceneFaq, timeline: sceneTimeline,
+    like: sceneLike, share: sceneShare, subscribe: sceneSubscribe, engagement: sceneEngagement,
   };
   const fn = DISPATCH[type];
   if (fn) fn(p, fields);
@@ -2332,6 +2506,7 @@ async function ensureFontsReady(){
     await document.fonts.load('800 96px Inter');
     await document.fonts.load('700 22px "IBM Plex Mono"');
     await document.fonts.load('800 96px Cairo');
+    await document.fonts.load('500 96px "Material Symbols Rounded"');
     await document.fonts.ready;
   } catch(e){}
 }
@@ -2360,6 +2535,10 @@ function sceneSpeakableText(type, f){
   if (type==='progress') return [f.label, f.value, f.unit].filter(Boolean).join(' ');
   if (type==='faq') return [f.question, f.answer].filter(Boolean).join('. ');
   if (type==='timeline') return [f.title].filter(Boolean).join(' ');
+  if (type==='like') return [f.text, f.count].filter(Boolean).join('. ');
+  if (type==='share') return [f.text, f.count].filter(Boolean).join('. ');
+  if (type==='subscribe') return [f.text, f.button].filter(Boolean).join('. ');
+  if (type==='engagement') return [f.title, f.like_text, f.share_text, f.subscribe_text].filter(Boolean).join('. ');
   return '';
 }
 let lastSpokenIdx = -1;
@@ -3055,6 +3234,7 @@ const I18N = {
     typeBenchModel:'Bench: Model', typeBenchHero:'Bench: Hero Stats', typeBenchSecondary:'Bench: Telemetry', typeBenchLeaderboard:'Bench: Leaderboard',
     typeLowerThird:'Lower Third', typeCta:'Call to Action', typeTestimonial:'Testimonial', typeChecklist:'Checklist',
     typeBarChart:'Bar Chart', typeCountdown:'Countdown', typeDonut:'Donut Chart', typeProgress:'Progress Bar', typeFaq:'FAQ / Q&A', typeTimeline:'Timeline',
+    typeLike:'Like (engagement)', typeShare:'Share (engagement)', typeSubscribe:'Subscribe (engagement)', typeEngagement:'Engagement (Like+Share+Sub)',
     saveProjectBtn:'💾 Save project', loadProjectBtn:'📂 Load project',
     batchTitle:'Batch Export',
     batchNote:'Paste multiple scripts, each separated by a line with just "---". Each one gets its own AI-generated scenes and its own exported file.',
@@ -3106,6 +3286,7 @@ const I18N = {
     typeBenchModel:'معيار: عنوان النموذج', typeBenchHero:'معيار: أرقام بارزة', typeBenchSecondary:'معيار: تتبع تفصيلي', typeBenchLeaderboard:'معيار: لوحة المتصدرين',
     typeLowerThird:'شريط سفلي', typeCta:'دعوة لإجراء', typeTestimonial:'رأي / شهادة', typeChecklist:'قائمة تحقق',
     typeBarChart:'رسم أعمدة', typeCountdown:'عد تنازلي', typeDonut:'رسم دائري', typeProgress:'شريط تقدم', typeFaq:'سؤال وجواب', typeTimeline:'خط زمني',
+    typeLike:'إعجاب (تفاعل)', typeShare:'مشاركة (تفاعل)', typeSubscribe:'اشتراك (تفاعل)', typeEngagement:'تفاعل (إعجاب+مشاركة+اشتراك)',
     saveProjectBtn:'💾 حفظ المشروع', loadProjectBtn:'📂 تحميل مشروع',
     batchTitle:'تصدير دفعة',
     batchNote:'الصق أكتر من سكريبت، كل واحد مفصول بسطر فيه "---" بس. كل سكريبت هياخد مشاهده الخاصة من الذكاء الاصطناعي وملف تصدير منفصل.',
