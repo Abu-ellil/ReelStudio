@@ -775,7 +775,9 @@ async function generateScenes(){
 
 // ============================================================ benchmark report store
 function normalizeReport(raw){
-  const s = raw.summary ? raw.summary : raw;
+  // Summary may live at llm_results.summary (new schema), raw.summary (wrapper),
+  // or directly on raw (flat legacy shape / sample reports).
+  const s = raw.llm_results?.summary ?? raw.summary ?? raw;
   return {
     model: s.model || 'unknown-model',
     gpu: s.gpu || 'unknown-gpu',
@@ -790,7 +792,89 @@ function normalizeReport(raw){
     avg_gpu_power_w: s.avg_gpu_power_w ?? null,
     avg_cpu_pct: s.avg_cpu_pct ?? null,
     peak_ram_mb: s.peak_ram_mb ?? null,
+    // extra sections kept for the expandable detail view
+    per_prompt: raw.llm_results?.per_prompt ?? raw.per_prompt ?? [],
+    benchmark_scores: raw.benchmark_scores ?? s.benchmark_scores ?? null,
+    system_info: { system: raw.system, cpu: raw.cpu, ram: raw.ram, gpus: raw.gpus, storage: raw.storage },
   };
+}
+
+const expandedReports = new Set();
+
+function riSummarySection(r){
+  const row = (k, v) => `<div class="ri-kv"><span>${k}</span><b>${v}</b></div>`;
+  return `
+    <div class="ri-section">
+      <div class="ri-section-title">Summary metrics</div>
+      <div class="ri-grid">
+        ${row('TTFT (avg)', fmtNum(r.avg_ttft_s, 2, 's'))}
+        ${row('GPU util', fmtNum(r.avg_gpu_util_pct, 0, '%') + ' / ' + fmtNum(r.peak_gpu_util_pct, 0, '%') + ' peak')}
+        ${row('VRAM peak', fmtNum(r.peak_vram_mb, 0, ' MB'))}
+        ${row('GPU temp', fmtNum(r.avg_gpu_temp_c, 0, '°C') + ' / ' + fmtNum(r.peak_gpu_temp_c, 0, '°C') + ' peak')}
+        ${row('GPU power', fmtNum(r.avg_gpu_power_w, 0, ' W'))}
+        ${row('CPU', fmtNum(r.avg_cpu_pct, 0, '%'))}
+        ${row('RAM peak', fmtNum(r.peak_ram_mb, 0, ' MB'))}
+      </div>
+    </div>`;
+}
+
+function riPerPromptSection(r){
+  const pp = r.per_prompt;
+  if (!Array.isArray(pp) || !pp.length) return '';
+  const head = '<tr><th>Label</th><th>tok/s</th><th>TTFT</th><th>tokens</th><th>GPU util</th><th>VRAM peak</th></tr>';
+  const body = pp.map(p => `
+    <tr>
+      <td class="ri-pl">${escHtml(p.label ?? '—')}</td>
+      <td class="ri-num cyan">${fmtNum(p.tokens_per_sec, 1)}</td>
+      <td class="ri-num">${fmtNum(p.ttft_s, 2, 's')}</td>
+      <td class="ri-num">${fmtNum(p.tokens_generated, 0)}</td>
+      <td class="ri-num">${fmtNum(p.gpu_util_avg, 0, '%')}</td>
+      <td class="ri-num">${fmtNum(p.vram_used_peak_mb, 0, ' MB')}</td>
+    </tr>`).join('');
+  return `
+    <div class="ri-section">
+      <div class="ri-section-title">Per-prompt breakdown</div>
+      <table class="ri-prompt-table"><thead>${head}</thead><tbody>${body}</tbody></table>
+    </div>`;
+}
+
+function riHardwareSection(r){
+  const bs = r.benchmark_scores;
+  if (!bs) return '';
+  const row = (k, v) => `<div class="ri-kv"><span>${k}</span><b>${v}</b></div>`;
+  return `
+    <div class="ri-section">
+      <div class="ri-section-title">Hardware scores</div>
+      <div class="ri-grid">
+        ${row('CPU single', fmtNum(bs.cpu_single, 0))}
+        ${row('CPU multi', fmtNum(bs.cpu_multi, 0))}
+        ${row('RAM bandwidth', fmtNum(bs.ram_bandwidth, 0))}
+        ${row('Disk seq', fmtNum(bs.disk_seq_mbps, 0, ' MB/s'))}
+        ${row('Disk write', fmtNum(bs.disk_write_mbps, 0, ' MB/s'))}
+        ${row('Disk read', fmtNum(bs.disk_read_mbps, 0, ' MB/s'))}
+      </div>
+    </div>`;
+}
+
+function riSystemSection(r){
+  const si = r.system_info || {};
+  const cpu = si.cpu || {}, ram = si.ram || {}, sys = si.system || {};
+  const gpus = Array.isArray(si.gpus) && si.gpus.length ? si.gpus : [];
+  const row = (k, v) => `<div class="ri-kv"><span>${k}</span><b>${v}</b></div>`;
+  const cpuCores = cpu.cores_logical || cpu.cores_physical;
+  const gpuText = gpus.map(g => escHtml(g.name ?? '') + (g.vram_total_mb ? ' (' + fmtNum(g.vram_total_mb/1024, 1, ' GB') + ')' : '')).join(', ');
+  const hasAny = sys.os || cpu.name || ram.total_gb || gpuText;
+  if (!hasAny) return '';
+  return `
+    <div class="ri-section">
+      <div class="ri-section-title">System info</div>
+      <div class="ri-grid">
+        ${row('OS', escHtml((sys.os || '?') + (sys.os_release ? ' ' + sys.os_release : '')))}
+        ${row('CPU', escHtml(cpu.name || '?') + (cpuCores ? ' · ' + cpuCores + ' threads' : ''))}
+        ${row('RAM', fmtNum(ram.total_gb, 1, ' GB'))}
+        ${gpuText ? row('GPU', gpuText) : ''}
+      </div>
+    </div>`;
 }
 
 function renderReportList(){
@@ -799,16 +883,37 @@ function renderReportList(){
     el.innerHTML = '<div style="color:var(--dim2);font-size:11.5px;font-style:italic;padding:6px 0;">No reports loaded yet.</div>';
     return;
   }
-  el.innerHTML = reports.map((r,i) => `
-    <div class="report-item">
-      <div class="ri-name">${escHtml(r.model)} <span style="color:var(--dim2)">· ${escHtml(r.gpu)}</span></div>
-      <div class="ri-tps">${r.avg_tokens_per_sec != null ? r.avg_tokens_per_sec.toFixed(1)+' t/s' : 'n/a'}</div>
-      <button class="ri-remove" data-idx="${i}">×</button>
-    </div>
-  `).join('');
+  el.innerHTML = reports.map((r,i) => {
+    const open = expandedReports.has(i);
+    const detail = riSummarySection(r) + riPerPromptSection(r) + riHardwareSection(r) + riSystemSection(r);
+    return `
+      <div class="report-item${open ? ' expanded' : ''}" data-idx="${i}">
+        <div class="ri-head" data-idx="${i}">
+          <span class="ri-toggle">${open ? '▾' : '▸'}</span>
+          <div class="ri-name">${escHtml(r.model)} <span style="color:var(--dim2)">· ${escHtml(r.gpu)}</span></div>
+          <div class="ri-tps">${r.avg_tokens_per_sec != null ? r.avg_tokens_per_sec.toFixed(1)+' t/s' : 'n/a'}</div>
+          <button class="ri-remove" data-idx="${i}">×</button>
+        </div>
+        ${open ? `<div class="ri-detail">${detail}</div>` : ''}
+      </div>`;
+  }).join('');
+  el.querySelectorAll('.ri-head').forEach(head => {
+    head.addEventListener('click', (e) => {
+      if (e.target.classList.contains('ri-remove')) return; // remove handled separately
+      const idx = parseInt(head.dataset.idx);
+      if (expandedReports.has(idx)) expandedReports.delete(idx); else expandedReports.add(idx);
+      renderReportList();
+    });
+  });
   el.querySelectorAll('.ri-remove').forEach(btn => {
-    btn.addEventListener('click', () => {
-      reports.splice(parseInt(btn.dataset.idx), 1);
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const idx = parseInt(btn.dataset.idx);
+      reports.splice(idx, 1);
+      // rebuild expanded set indices after removal
+      const shifted = new Set();
+      expandedReports.forEach(j => { if (j < idx) shifted.add(j); else if (j > idx) shifted.add(j - 1); });
+      expandedReports.clear(); shifted.forEach(j => expandedReports.add(j));
       renderReportList();
     });
   });
@@ -1399,7 +1504,9 @@ function sceneBenchmarkHero(p, f){
 
 function sceneBenchmarkSecondary(p, f){
   const op = fadeWindow(p);
-  plainText((f.model||'') + '  —  detailed telemetry', W/2, 170, Math.min(30,W*0.028), 700, '#e8edf4', op, fontFor(), 'center');
+  const headerText = (f.model||'') + '  —  detailed telemetry';
+  const headerSize = fitFont(headerText, W*0.86, Math.min(30,W*0.028), fontFor(), 700, 16);
+  plainText(headerText, W/2, H*0.1, headerSize, 700, '#e8edf4', op, fontFor(), 'center');
 
   const stats = [
     ['GPU UTIL (AVG / PEAK)', `${fmtNum(f.avg_gpu_util_pct,0,'%')} / ${fmtNum(f.peak_gpu_util_pct,0,'%')}`],
@@ -1409,23 +1516,30 @@ function sceneBenchmarkSecondary(p, f){
     ['CPU AVG', fmtNum(f.avg_cpu_pct,0,'%')],
     ['RAM PEAK', fmtNum(f.peak_ram_mb,0,' MB')],
   ];
-  const cols = 3, colW = Math.min(520, W*0.27), rowH = 150;
+  const cols = 3, colW = Math.min(520, W*0.27);
+  // احسب ارتفاع الصف بحيث يلائم المنطقة المتاحة عمودياً (لا ازدحام ولا فيض)
+  const topY = H*0.2, bottomMargin = H*0.1;
+  const availH = H - topY - bottomMargin;
+  const rows = Math.ceil(stats.length/cols);
+  const rowH = Math.min(150, availH/rows);
+  const labelSize = Math.min(18, W*0.018);
+  const valSize = Math.min(34, W*0.034);
   const startX = W/2 - (cols*colW)/2 + colW/2;
-  const startY = Math.max(380, H*0.2);
+  const startY = topY + Math.max(0, (availH - rowH*rows)/2);
   stats.forEach((s,i) => {
     const col = i%cols, row = Math.floor(i/cols);
     const stagger = Math.min(1, Math.max(0, (p-0.15-i*0.05)/0.4));
     const localOp = op*easeOutCubic(stagger);
     const rise = (1-easeOutCubic(stagger))*24;
     const x = startX + col*colW, y = startY + row*rowH + rise;
-    plainText(s[0], x, y, 18, 700, '#6b7789', localOp, fontFor(), 'center');
-    plainText(s[1], x, y+46, 34, 600, '#e8edf4', localOp, fontMono(), 'center');
+    plainText(s[0], x, y, labelSize, 700, '#6b7789', localOp, fontFor(), 'center');
+    plainText(s[1], x, y+valSize*1.35, valSize, 600, '#e8edf4', localOp, fontMono(), 'center');
   });
 }
 
 function sceneBenchmarkLeaderboard(p, f){
   const op = fadeWindow(p, 0.12, 0.15);
-  plainText('TOKENS / SEC — RESULTS', W/2, 150, Math.min(34,W*0.032), 800, '#e8edf4', op, fontFor(), 'center');
+  plainText('TOKENS / SEC — RESULTS', W/2, H*0.085, Math.min(34,W*0.032), 800, '#e8edf4', op, fontFor(), 'center');
 
   let lbReports = [];
   try { lbReports = typeof f.reports === 'string' ? JSON.parse(f.reports) : (f.reports||[]); }
@@ -1434,11 +1548,21 @@ function sceneBenchmarkLeaderboard(p, f){
 
   const sorted = [...lbReports].sort((a,b) => (parseFloat(b.avg_tokens_per_sec)||0)-(parseFloat(a.avg_tokens_per_sec)||0));
   const maxTps = Math.max(...sorted.map(r=>parseFloat(r.avg_tokens_per_sec)||0), 1);
-  const barMaxW = Math.min(820, W*0.62), barH = 64, gap = 26;
-  const totalH = sorted.length*(barH+gap)-gap;
-  const startY = H/2 - totalH/2 + 40;
-  const startX = W/2 - barMaxW/2 - 60;  // shift left so the number fits on the right
+  // هامش يسار/يمين نسبي + مساحة محجوزة للرقم على اليمين
+  const sideMargin = W*0.05;
+  const numReserve = W*0.2;
+  const barMaxW = Math.min(W - sideMargin*2 - numReserve, W*0.6);
+  const gap = Math.min(26, H*0.014);
+  // اضبط ارتفاع الشريط بحيث تتسع كل الصفوف عمودياً دون فيض
+  const topY = H*0.18, bottomMargin = H*0.08;
+  const availH = H - topY - bottomMargin;
+  const barH = Math.max(36, Math.min(64, (availH - gap*(sorted.length-1))/sorted.length));
+  const totalH = sorted.length*barH + gap*(sorted.length-1);
+  const startY = topY + Math.max(0, (availH - totalH)/2);
+  const startX = sideMargin;
 
+  const modelSize = Math.min(18, W*0.018);
+  const numSize = Math.min(24, W*0.024);
   sorted.forEach((r,i) => {
     const stagger = Math.min(1, Math.max(0, (p-0.15-i*0.12)/0.5));
     const growP = easeOutCubic(stagger);
@@ -1454,11 +1578,11 @@ function sceneBenchmarkLeaderboard(p, f){
     ctx.fill();
     ctx.restore();
 
-    plainText(`${r.model||''}  ·  ${r.gpu||''}`, startX, y-10, 18, 600, '#8b949e', localOp, fontMono(), 'left');
+    plainText(`${r.model||''}  ·  ${r.gpu||''}`, startX, y-10, modelSize, 600, '#8b949e', localOp, fontMono(), 'left');
     // count-up: number animates from 0 to final value as the bar grows
     const finalTps = parseFloat(r.avg_tokens_per_sec)||0;
     const shownTps = finalTps * growP;
-    plainText(fmtNum(shownTps,1,' tok/s'), startX + Math.max(2,w) + 16, y+barH/2+7, 24, 700,
+    plainText(fmtNum(shownTps,1,' tok/s'), startX + Math.max(2,w) + 16, y+barH/2+7, numSize, 700,
                isFirst ? THEME.primary : '#e8edf4', localOp, fontMono(), 'left');
   });
 }
