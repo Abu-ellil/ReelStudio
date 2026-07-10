@@ -21,9 +21,20 @@
   h1{font-size:18px;font-weight:800;margin:0 0 2px 0;}
   .sub{color:var(--dim);font-size:12.5px;font-family:'IBM Plex Mono',monospace;margin-bottom:20px;}
 
-  .layout{display:grid;grid-template-columns:340px 1fr 320px;gap:16px;align-items:start;}
-  @media (max-width:1300px){.layout{grid-template-columns:320px 1fr;}}
-  @media (max-width:1000px){.layout{grid-template-columns:1fr;}}
+  .layout{display:flex;gap:0;align-items:flex-start;}
+  .layout > .col{flex:0 0 340px;min-width:0;}
+  .layout > .col.center{flex:1 1 0;min-width:0;}
+  .layout > .col.right{flex:0 0 320px;min-width:0;}
+  /* مقابض السحب بين الأعمدة */
+  .gutter{position:relative;width:14px;cursor:col-resize;background:transparent;flex:0 0 14px;z-index:5;}
+  .gutter::before{content:'';position:absolute;top:0;bottom:0;left:50%;width:2px;transform:translateX(-50%);
+    background:var(--border);border-radius:2px;transition:background .15s ease, box-shadow .15s ease;}
+  .gutter:hover::before,.gutter.dragging::before{background:var(--cyan);box-shadow:0 0 8px var(--cyan);}
+  body.gutter-dragging{cursor:col-resize;user-select:none;}
+  body.gutter-dragging *{pointer-events:none;}
+  @media (max-width:1300px){.layout .gutter-r,.layout > .col.right{display:none;}}
+  @media (max-width:1000px){.layout{flex-direction:column;}.layout .gutter{display:none;}
+    .layout > .col{flex:0 0 auto;width:100%;}}
 
   .topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;gap:12px;flex-wrap:wrap;}
   .lang-switch{display:flex;background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:3px;gap:2px;}
@@ -109,13 +120,33 @@
 
   .report-list{display:flex;flex-direction:column;gap:6px;margin-top:8px;}
   .report-item{
-    display:flex;align-items:center;gap:8px;background:#0c1119;border:1px solid var(--border);
-    border-radius:7px;padding:8px 10px;font-size:12px;
+    display:flex;flex-direction:column;background:#0c1119;border:1px solid var(--border);
+    border-radius:7px;font-size:12px;overflow:hidden;
   }
+  .report-item.expanded{border-color:var(--cyan);background:#0d141e;}
+  .report-item .ri-head{
+    display:flex;align-items:center;gap:8px;padding:8px 10px;cursor:pointer;user-select:none;
+  }
+  .report-item .ri-head:hover{background:rgba(63,208,255,0.05);}
+  .report-item .ri-toggle{color:var(--dim);width:12px;text-align:center;flex-shrink:0;}
   .report-item .ri-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .report-item .ri-tps{color:var(--cyan);font-family:'IBM Plex Mono',monospace;font-size:11px;}
   .report-item .ri-remove{background:transparent;border:none;color:var(--dim);cursor:pointer;width:auto;padding:2px 6px;margin:0;font-size:14px;}
   .report-item .ri-remove:hover{color:var(--red);}
+  .report-item .ri-detail{
+    border-top:1px solid var(--border);padding:10px 12px;display:flex;flex-direction:column;gap:10px;
+  }
+  .report-item .ri-section-title{color:var(--dim2);font-size:10px;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:5px;font-weight:600;}
+  .report-item .ri-grid{display:grid;grid-template-columns:1fr 1fr;gap:3px 16px;}
+  .report-item .ri-kv{display:flex;justify-content:space-between;gap:8px;font-size:11px;}
+  .report-item .ri-kv span{color:var(--dim);}
+  .report-item .ri-kv b{color:var(--fg);font-weight:500;font-family:'IBM Plex Mono',monospace;}
+  .report-item .ri-prompt-table{width:100%;border-collapse:collapse;font-size:11px;}
+  .report-item .ri-prompt-table th{text-align:left;color:var(--dim2);font-weight:600;padding:3px 6px;border-bottom:1px solid var(--border);font-size:10px;text-transform:uppercase;letter-spacing:0.04em;}
+  .report-item .ri-prompt-table td{padding:3px 6px;border-bottom:1px solid rgba(255,255,255,0.03);}
+  .report-item .ri-prompt-table .ri-pl{color:var(--fg);}
+  .report-item .ri-prompt-table .ri-num{font-family:'IBM Plex Mono',monospace;text-align:right;color:var(--fg);}
+  .report-item .ri-prompt-table .ri-num.cyan{color:var(--cyan);}
 
   .stage-wrap{background:#000;border:1px solid var(--border);border-radius:10px;overflow:hidden;position:relative;max-height:76vh;width:fit-content;max-width:100%;margin:0 auto;}
   #stage{display:block;background:#000;max-width:100%;max-height:76vh;width:auto;height:auto;}
@@ -167,6 +198,21 @@
   ::-webkit-scrollbar-track{background:transparent;}
   ::-webkit-scrollbar-thumb{background:#2a3441;border-radius:3px;}
   ::-webkit-scrollbar-thumb:hover{background:#3a4451;}
+
+  /* project bar */
+  .project-bar{display:flex;gap:6px;align-items:center;margin-bottom:10px;}
+  .project-bar > span{font-size:10.5px;color:var(--dim);font-weight:700;letter-spacing:0.5px;text-transform:uppercase;white-space:nowrap;}
+  .project-bar select{
+    flex:1;background:var(--panel);border:1px solid var(--border);color:var(--fg);padding:6px 8px;border-radius:7px;
+    font-family:'IBM Plex Mono',monospace;font-size:11.5px;
+  }
+  .project-bar .proj-btn{
+    width:auto;margin:0;padding:6px 9px;font-size:12px;background:var(--panel);border:1px solid var(--border);
+    color:var(--dim);border-radius:7px;font-weight:700;cursor:pointer;transition:opacity .15s ease, transform .1s ease;
+  }
+  .project-bar .proj-btn:hover:not(:disabled){border-color:var(--cyan);color:var(--cyan);}
+  .project-bar .proj-btn:active{transform:scale(0.96);}
+  .project-bar .proj-btn.danger:hover:not(:disabled){border-color:var(--red);color:var(--red);}
 </style>
 </head>
 <body>
@@ -184,7 +230,14 @@
 
 <div class="layout">
   <!-- LEFT: input + settings -->
-  <div>
+  <div class="col">
+    <div class="project-bar" id="projectBar">
+      <span data-i18n="projLabel">Project</span>
+      <select id="projectSel"></select>
+      <button class="proj-btn" id="projNewBtn" data-i18n="projNew" title="New project">＋</button>
+      <button class="proj-btn" id="projRenameBtn" data-i18n="projRename" title="Rename project">✎</button>
+      <button class="proj-btn danger" id="projDeleteBtn" data-i18n="projDelete" title="Delete project">🗑</button>
+    </div>
     <div class="tab-nav" id="leftTabNav">
       <button class="active" data-tab="write" data-i18n="tabWrite">1 · Write</button>
       <button data-tab="bench" data-i18n="tabBench">Benchmark</button>
@@ -384,8 +437,10 @@
     </div>
   </div>
 
+  <div class="gutter gutter-l" data-side="left" title="اسحب لتغيير العرض"></div>
+
   <!-- CENTER: stage -->
-  <div>
+  <div class="col center">
     <div class="stage-wrap">
       <canvas id="stage" width="1080" height="1920"></canvas>
       <div class="rec-badge" id="recBadge"><div class="rec-dot"></div>REC</div>
@@ -411,8 +466,10 @@
     </div>
   </div>
 
+  <div class="gutter gutter-r" data-side="right" title="اسحب لتغيير العرض"></div>
+
   <!-- RIGHT: scene editor / batch -->
-  <div>
+  <div class="col right">
     <div class="tab-nav" id="rightTabNav">
       <button class="active" data-tab="scenes" data-i18n="tabScenes">Scenes</button>
       <button data-tab="batch" data-i18n="tabBatch">Batch</button>
@@ -917,6 +974,7 @@ function renderReportList(){
       renderReportList();
     });
   });
+  scheduleProjectSave();
 }
 
 document.getElementById('addJsonBtn').addEventListener('click', () => {
@@ -1140,6 +1198,7 @@ function renderSceneEditor(){
 
     list.appendChild(card);
   });
+  scheduleProjectSave();
 }
 
 // ============================================================ background fx
@@ -1254,6 +1313,31 @@ function plainText(text,x,y,size,weight,color,opacity,font='Inter',align='left')
   ctx.textAlign=align; ctx.textBaseline='alphabetic';
   ctx.fillStyle=color; ctx.fillText(text,x,y); ctx.restore();
 }
+// نص بتدرّج لوني أفقي (c1 → c2) مطبّق على العناوين ليعكس ألوان الهوية
+function gradientText(text,x,y,size,weight,c1,c2,opacity,font='Inter',align='left'){
+  ctx.save(); ctx.globalAlpha=opacity;
+  ctx.font=`${weight} ${size}px "${font}"`;
+  ctx.textAlign=align; ctx.textBaseline='alphabetic';
+  const w=ctx.measureText(text).width;
+  let lx=x;
+  if(align==='center') lx=x-w/2; else if(align==='right') lx=x-w;
+  const g=ctx.createLinearGradient(lx,0,lx+w,0);
+  g.addColorStop(0,c1); g.addColorStop(1,c2);
+  ctx.fillStyle=g; ctx.fillText(text,x,y); ctx.restore();
+}
+// مثل gradientText مع توهّج: الظل يبقى صلبًا (canvas لا يدعم تدرّجًا كظل)
+function glowGradientText(text,x,y,size,weight,c1,c2,opacity,glow=22,font='Inter',align='left'){
+  ctx.save(); ctx.globalAlpha=opacity;
+  ctx.font=`${weight} ${size}px "${font}"`;
+  ctx.textAlign=align; ctx.textBaseline='alphabetic';
+  ctx.shadowColor=c1; ctx.shadowBlur=glow;
+  const w=ctx.measureText(text).width;
+  let lx=x;
+  if(align==='center') lx=x-w/2; else if(align==='right') lx=x-w;
+  const g=ctx.createLinearGradient(lx,0,lx+w,0);
+  g.addColorStop(0,c1); g.addColorStop(1,c2);
+  ctx.fillStyle=g; ctx.fillText(text,x,y); ctx.restore();
+}
 function wrapText(text,maxWidth,font,size,weight){
   ctx.save(); ctx.font=`${weight} ${size}px "${font}"`;
   const words = text.split(' ');
@@ -1306,7 +1390,7 @@ function sceneIntro(p, f){
   const fp = fontFor();
   const maxTitleW = W*0.86;
   const titleSize = fitFont(f.title||'', maxTitleW, Math.min(96,W*0.08), fp, 900, 28);
-  glowText(f.title||'', W/2, H/2-20+rise, titleSize, 900, '#e8edf4', op, 30, fp, 'center');
+  glowGradientText(f.title||'', W/2, H/2-20+rise, titleSize, 900, THEME.primary, THEME.accent, op, 30, fp, 'center');
   if (f.subtitle) plainText(f.subtitle, W/2, H/2+50+rise, Math.min(30,W*0.028), 500, THEME.primary, op*0.95, fontMono(), 'center');
   ctx.save(); ctx.globalAlpha=op; ctx.strokeStyle=THEME.primary; ctx.lineWidth=2;
   const lw = Math.min(220,W*0.2)*easeOutCubic(Math.min(1,p/0.35));
@@ -1320,7 +1404,7 @@ function sceneTitle(p, f){
   if (f.label) plainText((f.label||'').toUpperCase(), W/2, H/2-100, Math.min(24,W*0.024), 700, '#6b7789', op, fontMono(), 'center');
   const maxTitleW = W*0.84;
   const titleSize = fitFont(f.title||'', maxTitleW, Math.min(80,W*0.07), fp, 800, 24);
-  glowText(f.title||'', W/2, H/2+10, titleSize, 800, '#e8edf4', op, 26, fp, 'center');
+  glowGradientText(f.title||'', W/2, H/2+10, titleSize, 800, THEME.primary, THEME.accent, op, 26, fp, 'center');
 }
 
 function sceneBullet(p, f){
@@ -1328,7 +1412,7 @@ function sceneBullet(p, f){
   const fp = fontFor();
   const items = Array.isArray(f.items) ? f.items : [];
   const titleSize = fitFont(f.title||'', W*0.84, Math.min(38,W*0.035), fp, 800, 18);
-  plainText(f.title||'', W/2, H*0.09, titleSize, 800, '#e8edf4', op, fp, 'center');
+  gradientText(f.title||'', W/2, H*0.09, titleSize, 800, THEME.primary, THEME.accent, op, fp, 'center');
   const startY = H*0.17;
   const gap = Math.min(110, (H-startY-120)/Math.max(items.length,1));
   const circleOffset = Math.min(540, W*0.26);
@@ -1373,7 +1457,7 @@ function sceneComparison(p, f){
   const op = fadeWindow(p);
   const fp = fontFor();
   const titleSize = fitFont(f.title||'', W*0.84, Math.min(36,W*0.033), fp, 800, 18);
-  plainText(f.title||'', W/2, H*0.085, titleSize, 800, '#e8edf4', op, fp, 'center');
+  gradientText(f.title||'', W/2, H*0.085, titleSize, 800, THEME.primary, THEME.accent, op, fp, 'center');
   const leftStagger = easeOutCubic(Math.min(1,p/0.4));
   const rightStagger = easeOutCubic(Math.min(1,Math.max(0,(p-0.2)/0.4)));
   const leftOp = op*leftStagger, rightOp = op*rightStagger;
@@ -1431,7 +1515,7 @@ function sceneOutro(p, f){
   const op = fadeWindow(p,0.2,0.3);
   const fp = fontFor();
   const titleSize = fitFont(f.title||'', W*0.86, Math.min(56,W*0.05), fp, 800, 20);
-  glowText(f.title||'', W/2, H/2-10, titleSize, 800, '#e8edf4', op, 24, fp, 'center');
+  glowGradientText(f.title||'', W/2, H/2-10, titleSize, 800, THEME.primary, THEME.accent, op, 24, fp, 'center');
   if (f.subtitle) plainText(f.subtitle||'', W/2, H/2+55, Math.min(24,W*0.024), 500, THEME.primary, op*0.9, fontMono(), 'center');
 }
 
@@ -1454,7 +1538,7 @@ function sceneBenchmarkModel(p, f){
   plainText('NOW BENCHMARKING', W/2, H/2-140, Math.min(22,W*0.022), 700, '#6b7789', op, fontMono(), 'center');
   const modelText = f.model||'';
   const modelSize = fitFont(modelText, W*0.84, Math.min(72,W*0.065), fontFor(), 800, 22);
-  glowText(modelText, W/2, H/2-40, modelSize, 800, '#e8edf4', op, 26, fontFor(), 'center');
+  glowGradientText(modelText, W/2, H/2-40, modelSize, 800, THEME.primary, THEME.accent, op, 26, fontFor(), 'center');
   ctx.save(); ctx.globalAlpha = op;
   const badgeY = H/2+40;
   // center two badges; shrink-to-fit so they never overflow horizontally
@@ -1506,7 +1590,7 @@ function sceneBenchmarkSecondary(p, f){
   const op = fadeWindow(p);
   const headerText = (f.model||'') + '  —  detailed telemetry';
   const headerSize = fitFont(headerText, W*0.86, Math.min(30,W*0.028), fontFor(), 700, 16);
-  plainText(headerText, W/2, H*0.1, headerSize, 700, '#e8edf4', op, fontFor(), 'center');
+  gradientText(headerText, W/2, H*0.1, headerSize, 700, THEME.primary, THEME.accent, op, fontFor(), 'center');
 
   const stats = [
     ['GPU UTIL (AVG / PEAK)', `${fmtNum(f.avg_gpu_util_pct,0,'%')} / ${fmtNum(f.peak_gpu_util_pct,0,'%')}`],
@@ -1539,7 +1623,7 @@ function sceneBenchmarkSecondary(p, f){
 
 function sceneBenchmarkLeaderboard(p, f){
   const op = fadeWindow(p, 0.12, 0.15);
-  plainText('TOKENS / SEC — RESULTS', W/2, H*0.085, Math.min(34,W*0.032), 800, '#e8edf4', op, fontFor(), 'center');
+  gradientText('TOKENS / SEC — RESULTS', W/2, H*0.085, Math.min(34,W*0.032), 800, THEME.primary, THEME.accent, op, fontFor(), 'center');
 
   let lbReports = [];
   try { lbReports = typeof f.reports === 'string' ? JSON.parse(f.reports) : (f.reports||[]); }
@@ -2343,6 +2427,10 @@ const I18N = {
     batchTitle:'Batch Export',
     batchNote:'Paste multiple scripts, each separated by a line with just "---". Each one gets its own AI-generated scenes and its own exported file.',
     batchRunBtn:'▶ Generate & Export All',
+    projLabel:'Project', projNew:'New project', projRename:'Rename project', projDelete:'Delete project',
+    projNewPrompt:'New project name:', projRenamePrompt:'Rename project:',
+    projDeleteConfirm:'Delete this project? This cannot be undone.',
+    projDefault:'My First Reel',
   },
   ar: {
     appTitle:'استوديو الريلز بالذكاء الاصطناعي', appSubtitle:'نص ← ذكاء اصطناعي ← مشاهد متحركة ← فيديو · مع وضع Benchmark',
@@ -2388,6 +2476,10 @@ const I18N = {
     batchTitle:'تصدير دفعة',
     batchNote:'الصق أكتر من سكريبت، كل واحد مفصول بسطر فيه "---" بس. كل سكريبت هياخد مشاهده الخاصة من الذكاء الاصطناعي وملف تصدير منفصل.',
     batchRunBtn:'▶ توليد وتصدير الكل',
+    projLabel:'المشروع', projNew:'مشروع جديد', projRename:'إعادة تسمية المشروع', projDelete:'حذف المشروع',
+    projNewPrompt:'اسم المشروع الجديد:', projRenamePrompt:'إعادة تسمية المشروع:',
+    projDeleteConfirm:'حذف هذا المشروع؟ لا يمكن التراجع عن هذا الإجراء.',
+    projDefault:'مشروعي الأول',
   },
 };
 
@@ -2412,6 +2504,200 @@ function applyI18n(lang){
 document.getElementById('uiLangEn').addEventListener('click', () => applyI18n('en'));
 document.getElementById('uiLangAr').addEventListener('click', () => applyI18n('ar'));
 
+// ============================================================ projects (multi-project persistence)
+const PROJECTS_KEY = 'aiReelProjects';
+const PROJ_TRACKED_IDS = [
+  'scriptInput','aiProvider','baseUrl','apiKey','modelSel',
+  'benchTitleInput','benchSubInput','leaderboardChk','jsonInput',
+  'formatSel','paceSel','langSel','captionsChk',
+  'bgPanX','bgPanY','bgScale','bgDim','brandPrimary','brandAccent',
+  'musicVolume','ttsPreviewChk','mp4Chk','watermarkChk',
+];
+let projectsStore = null;   // { activeId, projects: {id: {id,name,createdAt,updatedAt,data}} }
+let isApplyingProject = false; // guard so our own restores don't trigger autosave
+
+function loadProjectsStore(){
+  if (projectsStore) return projectsStore;
+  try {
+    const raw = localStorage.getItem(PROJECTS_KEY);
+    projectsStore = raw ? JSON.parse(raw) : null;
+  } catch(e){ projectsStore = null; }
+  if (!projectsStore || !projectsStore.projects){
+    projectsStore = { activeId: null, projects: {} };
+  }
+  return projectsStore;
+}
+
+function saveProjectsStore(){
+  try { localStorage.setItem(PROJECTS_KEY, JSON.stringify(projectsStore)); }
+  catch(e){ console.warn('saveProjectsStore failed (storage full?)', e); }
+}
+
+function makeProjId(){ return 'proj_' + Math.random().toString(36).slice(2,10); }
+
+// Read all tracked values from DOM + JS state into a plain object
+function collectProjectData(){
+  const data = {};
+  PROJ_TRACKED_IDS.forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (el.type === 'checkbox') data[id] = el.checked;
+    else data[id] = el.value;
+  });
+  // deep-copy scenes & reports so later edits don't mutate the stored snapshot
+  data._scenes = JSON.parse(JSON.stringify(scenes));
+  data._reports = JSON.parse(JSON.stringify(reports));
+  data._synthPreset = synthPreset;
+  return data;
+}
+
+// Write a data object back into DOM + JS state, then refresh derived UI
+function applyProjectData(data){
+  if (!data) return;
+  isApplyingProject = true;
+  // scalar / checkbox fields
+  PROJ_TRACKED_IDS.forEach(id => {
+    const el = document.getElementById(id);
+    if (!el || data[id] === undefined) return;
+    if (el.type === 'checkbox') el.checked = !!data[id];
+    else el.value = data[id];
+  });
+  // JS state
+  scenes = Array.isArray(data._scenes) ? JSON.parse(JSON.stringify(data._scenes)) : [];
+  reports = Array.isArray(data._reports) ? JSON.parse(JSON.stringify(data._reports)) : [];
+  synthPreset = data._synthPreset ?? null;
+  if (synthPreset) musicMode = 'synth';
+  // derived UI
+  THEME.primary = document.getElementById('brandPrimary').value || THEME.primary;
+  THEME.accent = document.getElementById('brandAccent').value || THEME.accent;
+  updateProviderUI();
+  applyFormat();
+  renderReportList();
+  renderSynthMusicRow();
+  if (synthPreset) highlightSynthRow(synthPreset);
+  renderSceneEditor();
+  buildTimeline();
+  drawAtTime(0);
+  updateUndoRedoButtons();
+  setTimeout(() => { isApplyingProject = false; }, 50);
+}
+
+// Save current editor state into the active project
+function saveCurrentProject(){
+  if (isApplyingProject) return;
+  const store = loadProjectsStore();
+  if (!store.activeId || !store.projects[store.activeId]) return;
+  const p = store.projects[store.activeId];
+  p.data = collectProjectData();
+  p.updatedAt = Date.now();
+  saveProjectsStore();
+}
+
+// debounced autosave
+let _projSaveTimer = null;
+function scheduleProjectSave(){
+  if (isApplyingProject) return;
+  clearTimeout(_projSaveTimer);
+  _projSaveTimer = setTimeout(saveCurrentProject, 500);
+}
+
+function createProject(name){
+  const store = loadProjectsStore();
+  const id = makeProjId();
+  const now = Date.now();
+  store.projects[id] = { id, name, createdAt: now, updatedAt: now, data: null };
+  store.activeId = id;
+  saveProjectsStore();
+  return id;
+}
+
+function renameProject(id, name){
+  const store = loadProjectsStore();
+  if (store.projects[id]){ store.projects[id].name = name; saveProjectsStore(); }
+}
+
+function deleteProject(id){
+  const store = loadProjectsStore();
+  delete store.projects[id];
+  if (store.activeId === id){
+    const remaining = Object.keys(store.projects);
+    store.activeId = remaining.length ? remaining[0] : null;
+  }
+  saveProjectsStore();
+}
+
+function switchProject(id){
+  const store = loadProjectsStore();
+  if (!store.projects[id]) return;
+  saveCurrentProject();            // persist current first
+  store.activeId = id;
+  saveProjectsStore();
+  applyProjectData(store.projects[id].data);
+  renderProjectBar();
+}
+
+function t9n(key, fallback){
+  const dict = I18N[currentUiLang] || I18N.en;
+  return dict[key] !== undefined ? dict[key] : fallback;
+}
+
+// Populate the project dropdown to reflect the store
+function renderProjectBar(){
+  const store = loadProjectsStore();
+  const sel = document.getElementById('projectSel');
+  const ids = Object.keys(store.projects);
+  sel.innerHTML = ids.map(id => `<option value="${id}">${escHtml(store.projects[id].name)}</option>`).join('');
+  sel.value = store.activeId || '';
+  // disable delete when only one project remains
+  document.getElementById('projDeleteBtn').disabled = ids.length <= 1;
+}
+
+// Wire the project bar buttons
+document.getElementById('projectSel').addEventListener('change', (e) => {
+  if (e.target.value) switchProject(e.target.value);
+});
+document.getElementById('projNewBtn').addEventListener('click', () => {
+  saveCurrentProject();
+  const name = (prompt(t9n('projNewPrompt','New project name:'), t9n('projDefault','Untitled')) || '').trim();
+  if (!name) return;
+  const id = createProject(name);
+  // start the new project from a clean slate
+  scenes = []; reports = []; synthPreset = null;
+  document.getElementById('scriptInput').value = '';
+  applyProjectData(collectProjectData());
+  saveCurrentProject();   // persist the blank state into the new project
+  renderProjectBar();
+});
+document.getElementById('projRenameBtn').addEventListener('click', () => {
+  const store = loadProjectsStore();
+  if (!store.activeId) return;
+  const cur = store.projects[store.activeId];
+  const name = (prompt(t9n('projRenamePrompt','Rename project:'), cur.name) || '').trim();
+  if (!name) return;
+  renameProject(store.activeId, name);
+  renderProjectBar();
+});
+document.getElementById('projDeleteBtn').addEventListener('click', () => {
+  const store = loadProjectsStore();
+  const ids = Object.keys(store.projects);
+  if (ids.length <= 1) return;
+  if (!store.activeId) return;
+  const cur = store.projects[store.activeId];
+  if (!confirm(t9n('projDeleteConfirm','Delete this project? This cannot be undone.') + `\n\n"${cur.name}"`)) return;
+  deleteProject(store.activeId);
+  applyProjectData(store.projects[store.activeId]?.data || null);
+  renderProjectBar();
+});
+
+// delegated autosave: any input/change on a tracked field triggers a debounced save
+['input','change'].forEach(ev => {
+  document.addEventListener(ev, (e) => {
+    if (e.target && e.target.id && PROJ_TRACKED_IDS.includes(e.target.id)){
+      scheduleProjectSave();
+    }
+  });
+});
+
 // ============================================================ init
 loadBrandKit();
 document.getElementById('brandPrimary').value = THEME.primary;
@@ -2434,6 +2720,81 @@ plainText('AI Reel Studio — ready', W/2, H/2, 34, 600, '#48505e', 1, 'Inter', 
 plainText('Connect AI → write text → Generate · or Benchmark tab', W/2, H/2+50, 22, 500, '#48505e', 0.8, 'IBM Plex Mono', 'center');
 renderSceneEditor();
 checkLmStudio();
+
+// ---- restore / bootstrap the project system ----
+(function initProjects(){
+  const store = loadProjectsStore();
+  const ids = Object.keys(store.projects);
+  if (!ids.length){
+    // first run: create a default project and capture the current (blank) state
+    const id = createProject(t9n('projDefault','My First Reel'));
+    saveCurrentProject();
+  } else {
+    if (!store.activeId || !store.projects[store.activeId]){
+      store.activeId = ids[0];
+      saveProjectsStore();
+    }
+    // apply the active project's saved data (or blank if new)
+    applyProjectData(store.projects[store.activeId].data);
+  }
+  renderProjectBar();
+})();
+
+// ============================================================ resizable side panels (مقابض سحب الأعمدة)
+(function(){
+  const layout = document.querySelector('.layout');
+  if (!layout) return;
+  const MIN = 240, MAX = 560, DEFAULTS = {left:340, right:320};
+  const leftCol  = layout.querySelector('.col:not(.center):not(.right)');
+  const rightCol = layout.querySelector('.col.right');
+  const KEY = 'reelStudio.panelWidths';
+  function clamp(v){ return Math.max(MIN, Math.min(MAX, v)); }
+  let widths = {left:DEFAULTS.left, right:DEFAULTS.right};
+  try {
+    const s = JSON.parse(localStorage.getItem(KEY) || '{}');
+    if (typeof s.left  === 'number') widths.left  = clamp(s.left);
+    if (typeof s.right === 'number') widths.right = clamp(s.right);
+  } catch(e){}
+  // التحقّق أن عرض النافذة فوق نقاط التوقّف (يتعطّل تحت 1300px)
+  function active(){ return window.innerWidth > 1300; }
+  function apply(){
+    if (!active()){ leftCol.style.flexBasis=''; rightCol.style.flexBasis=''; return; }
+    leftCol.style.flexBasis  = widths.left  + 'px';
+    rightCol.style.flexBasis = widths.right + 'px';
+  }
+  apply();
+  layout.querySelectorAll('.gutter').forEach(g => {
+    g.addEventListener('mousedown', e => {
+      if (!active()) return;
+      e.preventDefault();
+      const side = g.dataset.side;
+      g.classList.add('dragging');
+      document.body.classList.add('gutter-dragging');
+      const startX  = e.clientX;
+      const startW  = side==='left' ? widths.left : widths.right;
+      const isRTL   = document.documentElement.dir === 'rtl';
+      function move(ev){
+        let dx = ev.clientX - startX;
+        if (isRTL) dx = -dx;                       // عكس الاتجاه في الواجهة العربية
+        // يسار: التوسيع مع dx الموجب؛ يمين: التوسيع مع dx السالب
+        const w = clamp(startW + (side==='left' ? dx : -dx));
+        if (side==='left') widths.left = w; else widths.right = w;
+        apply();
+      }
+      function up(){
+        g.classList.remove('dragging');
+        document.body.classList.remove('gutter-dragging');
+        document.removeEventListener('mousemove', move);
+        document.removeEventListener('mouseup', up);
+        try { localStorage.setItem(KEY, JSON.stringify(widths)); } catch(e){}
+      }
+      document.addEventListener('mousemove', move);
+      document.addEventListener('mouseup', up);
+    });
+  });
+  // إعادة الضبط عند عبور نقاط التوقّف
+  window.addEventListener('resize', apply);
+})();
 </script>
 </body>
 </html>
