@@ -1,0 +1,94 @@
+<!--
+  ====================================================================
+  صفحة بلوجر — AI Reel Studio
+  ====================================================================
+  طريقة الاستخدام:
+  1. انسخ كل ما بين السطرين ▼ START ▼ و ▲ END ▲
+  2. في بلوجر: Pages → New Page → بدّل لـ HTML view (أيقونة <>)
+  3. الصق الكود
+  4. استبدل USERNAME و REPO برابط GitHub Pages بتاعك
+     مثال: https://aboellil.github.io/reel-studio/app.html
+  5. احفظ وانشر
+  ====================================================================
+-->
+
+<!-- ▼ START ▼ انسخ من هنا -->
+
+<style>
+  /* ═══ إخفاء الهيدر والسايدبار وشريط الأخبار وقائمة الموبايل ═══ */
+  header#sp-header,          /* القائمة العلوية */
+  #shreeta5bar,              /* شريط آخر الأخبار */
+  aside#sidepar-wid,         /* القائمة الجانبية (السايدبار) */
+  .sidenav,                  /* قائمة الموبايل المنزلقة */
+  .pos-t-t,                  /* الخلفية المعتمة لقائمة الموبايل */
+  .HeaderBg{                 /* خلفية الهيدر الثابتة */
+    display:none !important;
+  }
+  /* المحتوى الرئيسي يأخذ العرض كامل بعد إخفاء السايدبار */
+  .bocker .r-r{
+    width:100% !important;
+    max-width:100% !important;
+  }
+
+  /* ═══ تنسيق حاوية التطبيق ═══ */
+  #reelWrap{
+    max-width:1300px;
+    margin:0 auto;
+    padding:0 15px;
+  }
+  #reelFrame{
+    width:100%;
+    border:0;
+    display:block;
+    border-radius:12px;
+    box-shadow:0 4px 24px rgba(0,0,0,.12);
+    background:#0a0e14;
+    min-height:600px;
+  }
+  .reel-ad{
+    margin:18px auto;
+    max-width:1300px;
+    text-align:center;
+    overflow:hidden;
+  }
+</style>
+
+<!-- ═══ إعلان علوي (اختياري) ═══
+     ضع كود AdSense بتاعك بين الخطين، أو احذف الـ div كله لو مش محتاجه -->
+<div class="reel-ad">
+  <!-- <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXX" crossorigin="anonymous"></script>
+  <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-XXXXXXXX" data-ad-slot="XXXXXXXX" data-ad-format="auto" data-full-width-responsive="true"></ins>
+  <script>(adsbygoogle = window.adsbygoogle || []).push({});</script> -->
+</div>
+
+<!-- ═══ التطبيق ═══ -->
+<div id="reelWrap">
+  <iframe id="reelFrame"
+          src="https://USERNAME.github.io/REPO/app.html"
+          scrolling="no"
+          loading="lazy"
+          allow="fullscreen"
+          title="AI Reel Studio"></iframe>
+</div>
+
+<!-- ═══ إعلان سفلي (اختياري) ═══
+     ضع كود AdSense بتاعك بين الخطين، أو احذف الـ div كله لو مش محتاجه -->
+<div class="reel-ad">
+  <!-- <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXX" crossorigin="anonymous"></script>
+  <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-XXXXXXXX" data-ad-slot="XXXXXXXX" data-ad-format="auto" data-full-width-responsive="true"></ins>
+  <script>(adsbygoogle = window.adsbygoogle || []).push({});</script> -->
+</div>
+
+<script>//<![CDATA[
+(function(){
+  var f = document.getElementById('reelFrame');
+  // استقبال ارتفاع التطبيق وتطبيقه على الـ iframe
+  window.addEventListener('message', function(e){
+    if (e.data && e.data.type === 'reelResize' && e.data.height){
+      f.style.height = e.data.height + 'px';
+    }
+  });
+})();
+//]]></script>
+
+<!-- ▲ END ▲ انسخ لغاية هنا -->
