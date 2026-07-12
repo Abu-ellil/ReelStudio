@@ -763,6 +763,42 @@
 <script src="https://unpkg.com/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg.min.js"></script>
 
 <script>
+// ============================================================ حماية الـ iframe
+// نسمح للتطبيق يشتغل بس لو هو معروض جوه بلوجر بتاعنا أو مفتوح مباشرة.
+// لو حد أخد الرابط وحطّه في موقع تاني، نوقف التطبيق.
+// ⚠️ غيّر YOUR-BLOG.blogspot.com لدومين بلوجر الفعلي بتاعك.
+(function(){
+  var ALLOWED = ['https://YOUR-BLOG.blogspot.com'];
+  var topRef = null;
+  try { topRef = (window.location !== window.parent.location) ? document.referrer : window.location.href; } catch(e){ topRef = document.referrer || window.location.href; }
+  var ok = (window.top === window.self); // مفتوح مباشرة = مسموح
+  if (!ok){
+    for (var i=0;i<ALLOWED.length;i++){
+      if (topRef.indexOf(ALLOWED[i]) === 0){ ok = true; break; }
+    }
+  }
+  if (!ok){
+    document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;text-align:center;font-family:sans-serif;color:#888;padding:20px;">'+(document.documentElement.dir==='rtl'?'التطبيق متاح فقط على موقعنا الرسمي.':'This app is only available on our official website.')+'</div>';
+    throw new Error('blocked');
+  }
+})();
+
+// ============================================================ إرسال ارتفاع الـ iframe لبلوجر
+// بلوجر محتاج يعرف ارتفاع المحتوى عشان يظبط ارتفاع الـ iframe.
+function notifyHeight(){
+  try{
+    var h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
+    parent.postMessage({type:'reelResize', height:h}, '*');
+  }catch(e){}
+}
+window.addEventListener('load', notifyHeight);
+window.addEventListener('resize', notifyHeight);
+// فحص دوري لأول ثانيتين (لأن المحتوى بيتحمّل تدريجيًا)
+var _hT = setInterval(notifyHeight, 400);
+setTimeout(function(){ clearInterval(_hT); }, 2500);
+</script>
+
+<script>
 // ============================================================ canvas setup
 const canvas = document.getElementById('stage');
 const ctx = canvas.getContext('2d');

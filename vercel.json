@@ -1,0 +1,29 @@
+{
+  "//": "════════════════════════════════════════════════════════════════",
+  "//": "إعدادات Vercel — AI Reel Studio",
+  "//": "════════════════════════════════════════════════════════════════",
+  "//": "الغرض: نسمح للـ iframe يتعرض بس من موقع بلوجر بتاعك.",
+  "//": "لو حد أخد رابط app.html وحطه في موقته، البراوزر هيمنع ظهوره.",
+  "//": "",
+  "//": "⚠️ مهم: غيّر YOUR-BLOG.blogspot.com لدومين بلوجر الفعلي بتاعك.",
+  "//": "════════════════════════════════════════════════════════════════",
+
+  "cleanUrls": true,
+  "trailingSlash": false,
+
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "Content-Security-Policy",
+          "value": "frame-ancestors 'self' https://YOUR-BLOG.blogspot.com;"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "ALLOW-FROM https://YOUR-BLOG.blogspot.com"
+        }
+      ]
+    }
+  ]
+}

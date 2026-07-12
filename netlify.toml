@@ -1,0 +1,30 @@
+# ════════════════════════════════════════════════════════════════
+# إعدادات Netlify — AI Reel Studio
+# ════════════════════════════════════════════════════════════════
+# الغرض: نسمح للـ iframe يتعرض بس من موقع بلوجر بتاعك.
+# لو حد أخد رابط app.html وحطّه في موقته، البراوزر هيمنع ظهوره.
+#
+# ⚠️ مهم: غيّر YOUR-BLOG.blogspot.com لدومين بلوجر الفعلي بتاعك.
+#   لو عندك دومين مخصّص (custom domain) لبلوجر، حطه مكانه.
+#   تقدر تزود أكتر من دومين بمسافة بينهم.
+# ════════════════════════════════════════════════════════════════
+
+[build]
+  publish = "."
+  # مفيش build command — الملفات ثابتة (static)
+
+# ═══ رؤوس HTTP لكل الصفحات ═══
+[[headers]]
+  for = "/*"
+  [headers.values]
+    # ده السطر الأهم: قائمة الدومينات اللي مسموح لها تعرض المحتوى جوه iframe
+    # البقية (لا تكسر موقعك)
+    # - 'self' = نفس نتلفاي (لو فتحت الرابط مباشرة مش جوه iframe، شغّال عادي)
+    # - دومين بلوجر = مسموح يـ embed
+    Content-Security-Policy = "frame-ancestors 'self' https://YOUR-BLOG.blogspot.com;"
+
+    # توافق مع البراوزرات القديمة (نفس المعنى)
+    X-Frame-Options = "ALLOW-FROM https://YOUR-BLOG.blogspot.com"
+
+# لو عندك دومين مخصّص، تقدر تزوده كمان:
+# Content-Security-Policy = "frame-ancestors 'self' https://YOUR-BLOG.blogspot.com https://www.yourcustom.com;"
