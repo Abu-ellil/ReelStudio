@@ -4,10 +4,16 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AI Reel Studio — Unified</title>
+<!-- AdSense: Replace ca-pub-XXXXXXXXXXXXXXXX with your Publisher ID -->
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6038868527722889" crossorigin="anonymous"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800;900&family=Cairo:wght@400;600;700;800&display=swap');
   @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,500,1,0&display=swap');
-
+</style>
+<!-- AdSense loader — استبدل ca-pub-XXXX برقم حسابك من AdSense -->
+<!-- ملاحظة: ADSENSE_ENABLED في الـJS لازم يبقى true كمان عشان البانرات تظهر -->
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6038868527722889" crossorigin="anonymous"></script>
+<style>
   :root{
     --bg:#0a0e14; --panel:#11161f; --panel2:#0d1219; --border:#1e2530;
     --fg:#e8edf4; --dim:#6b7789; --dim2:#48505e;
@@ -42,6 +48,20 @@
   @media (max-width:1300px){.layout .gutter-r,.layout > .col.right{display:none;}}
   @media (max-width:1000px){.layout{flex-direction:column;}.layout .gutter{display:none;}
     .layout > .col{flex:0 0 auto;width:100%;}}
+
+  /* AdSense responsive styles */
+  .ad-slot{overflow:hidden;background:transparent;}
+  .ad-slot ins{background:transparent;}
+  /* Hide sidebar ads on narrow screens (they take too much space) */
+  @media (max-width:1000px){
+    .ad-left,.ad-right{display:none !important;}
+  }
+  /* Limit max width of top/bottom banner ads */
+  .ad-top,.ad-center-bottom{max-width:100%;}
+  /* Ensure ads don't overflow on mobile */
+  @media (max-width:600px){
+    .ad-top,.ad-center-bottom{min-height:auto;padding:0 8px;}
+  }
 
   .topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;gap:12px;flex-wrap:wrap;}
   .lang-switch{display:flex;background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:3px;gap:2px;}
@@ -318,6 +338,50 @@
     opacity:0;pointer-events:none;z-index:10000;transition:opacity .25s ease, transform .25s ease;
   }
   .fb-toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+  /* ============================================================ Ad slots */
+  .ad-slot-wrap{
+    margin:0 0 14px 0;background:var(--panel);border:1px dashed var(--border);
+    border-radius:10px;display:flex;align-items:center;justify-content:center;
+    overflow:hidden;min-height:90px;
+  }
+  .ad-slot-wrap.ad-top{min-height:100px;}
+  .ad-slot-wrap.ad-side{margin-top:12px;}
+  .ad-slot-wrap .ad-placeholder{
+    color:var(--dim2);font-size:10.5px;font-family:'IBM Plex Mono',monospace;
+    text-transform:uppercase;letter-spacing:0.5px;text-align:center;padding:18px 12px;line-height:1.6;
+  }
+  .ad-slot-wrap ins.adsbygoogle{display:block;width:100%;}
+  html[dir="rtl"] .ad-slot-wrap .ad-placeholder{font-family:'Cairo',sans-serif;text-transform:none;}
+  @media (max-width:1000px){.ad-slot-wrap.ad-side{display:none;}}
+
+  /* ============================================================ Unlock modal + badge */
+  .unlock-badge{
+    display:inline-flex;align-items:center;gap:5px;width:auto;margin:0;padding:6px 11px;
+    font-size:11px;font-weight:700;font-family:'IBM Plex Mono',monospace;
+    background:var(--panel);border:1px solid var(--border);color:var(--dim);
+    border-radius:8px;line-height:1;cursor:default;letter-spacing:0.2px;
+  }
+  .unlock-badge.all{border-color:var(--green);color:var(--green);}
+  .unlock-badge .ub-emoji{font-size:12px;}
+  html[dir="rtl"] .unlock-badge{font-family:'Cairo',sans-serif;}
+
+  .lock-prefix{margin-right:4px;font-size:11px;opacity:0.85;}
+  html[dir="rtl"] .lock-prefix{margin-right:0;margin-left:4px;}
+  .lock-locked-title{ /* tooltip على الأزرار المقفولة */ }
+
+  #unlockOverlay .modal{max-width:420px;text-align:center;}
+  #unlockFeatureName{font-size:16px;font-weight:800;color:var(--fg);margin-bottom:6px;}
+  #unlockOverlay .modal-body{padding:20px 22px 6px;}
+  #unlockMsg{margin:0 0 4px;text-align:center;font-size:12px;}
+  #unlockTimer{
+    font-size:46px;font-weight:900;text-align:center;color:var(--cyan);margin:10px 0 4px;
+    font-family:'IBM Plex Mono',monospace;line-height:1;min-height:46px;
+  }
+  #unlockTimer.done{color:var(--green);}
+  #unlockConfirmBtn:disabled{opacity:0.5;cursor:not-allowed;}
+  #unlockOverlay .modal-foot{justify-content:center;padding:10px 18px 20px;}
+  #unlockOverlay .modal-foot button{flex:0 0 auto;min-width:140px;}
 </style>
 </head>
 <body>
@@ -328,6 +392,7 @@
     <div class="sub" data-i18n="appSubtitle">Text → AI → animated scenes → video · with Benchmark mode</div>
   </div>
   <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+    <span class="unlock-badge" id="unlockBadge" title=""></span>
     <button class="fb-trigger" id="feedbackBtn" data-i18n="feedbackBtn" title="Feedback">💬 Feedback</button>
     <div class="lang-switch">
       <button id="uiLangEn" class="active" data-lang="en">EN</button>
@@ -335,6 +400,9 @@
     </div>
   </div>
 </div>
+
+<!-- Ad slot: top banner (يُملأ من JS عبر placeAd — ADSENSE_ENABLED لازم يكون true) -->
+<div class="ad-slot-wrap ad-top" id="adTop"></div>
 
 <div class="layout">
   <!-- LEFT: input + settings -->
@@ -650,6 +718,8 @@
 
   <!-- RIGHT: scene editor / batch -->
   <div class="col right">
+    <!-- Ad slot: side banner -->
+    <div class="ad-slot-wrap ad-side" id="adSide"></div>
     <div class="tab-nav" id="rightTabNav">
       <button class="active" data-tab="scenes" data-i18n="tabScenes">Scenes</button>
       <button data-tab="batch" data-i18n="tabBatch">Batch</button>
@@ -727,6 +797,17 @@
         <div class="batch-log" id="batchLog"></div>
       </div>
     </div>
+
+    <!-- AdSense: Right sidebar (vertical) -->
+    <div class="ad-slot ad-right" style="margin-top:20px;text-align:center;min-height:250px;">
+      <ins class="adsbygoogle"
+           style="display:block"
+           data-ad-client="ca-pub-XXXXXXXXXXXXXXXX"
+           data-ad-slot="YOUR_RIGHT_SIDEBAR_SLOT"
+           data-ad-format="vertical"
+           data-full-width-responsive="false"></ins>
+      <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+    </div>
   </div>
 </div>
 
@@ -759,6 +840,25 @@
   </div>
 </div>
 <div class="fb-toast" id="fbToast"></div>
+
+<!-- ============================================================ Unlock gate modal -->
+<div class="modal-overlay" id="unlockOverlay">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="unlockTitle">
+    <div class="modal-head">
+      <h2 id="unlockTitle">🔓 <span data-i18n="unlockTitle">Unlock feature</span></h2>
+      <button class="fb-close-x" id="unlockCloseX" title="Close">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="unlockFeatureName"></div>
+      <div id="unlockMsg" class="note" data-i18n="unlockFreeNote">Free — just wait a few seconds. No payment, no signup.</div>
+      <div id="unlockTimer">5</div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-primary" id="unlockConfirmBtn" disabled data-i18n="unlockConfirmBtn">✅ Use feature</button>
+      <button class="btn-ghost" id="unlockCancelBtn" data-i18n="unlockCancelBtn">Cancel</button>
+    </div>
+  </div>
+</div>
 
 <script src="https://unpkg.com/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg.min.js"></script>
 
@@ -819,6 +919,165 @@ function applyFormat(){
   W = canvas.width; H = canvas.height;
   rebuildParticles();
   drawAtTime(0);
+}
+
+// ============================================================ AdSense config
+// ⚙️ بدّل القيم دي قبل النشر:
+//   ADSENSE_ENABLED = true   ← فعّل البانرات (مكوّن إعلاني حقيقي)
+//   ADSENSE_CLIENT  = رقم حسابك (ca-pub-...) نفس اللي في <head>
+//   ADSENSE_SLOTS   = أرقام الـslots من لوحة AdSense لكل موضع
+// لو ADSENSE_ENABLED=false، هتظهر placeholders رمادية للتخطيط فقط.
+const ADSENSE_ENABLED = false;
+const ADSENSE_CLIENT  = 'ca-pub-6038868527722889';
+const ADSENSE_SLOTS   = { top:'YOUR_TOP_SLOT_ID', side:'YOUR_SIDE_SLOT_ID' };
+
+// يبني وحدة إعلان AdSense داخل حاوية، أو placeholder لو الإعلانات مفعّلة = false.
+function placeAd(containerId, slotKey){
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  el.innerHTML = '';
+  if (!ADSENSE_ENABLED){
+    // placeholder رمادي عشان التخطيط يفضل ثابت وقت التطوير
+    el.innerHTML = '<div class="ad-placeholder">Ad space · enabled in settings</div>';
+    return;
+  }
+  const ins = document.createElement('ins');
+  ins.className = 'adsbygoogle';
+  ins.style.display = 'block';
+  ins.setAttribute('data-ad-client', ADSENSE_CLIENT);
+  ins.setAttribute('data-ad-slot', ADSENSE_SLOTS[slotKey] || '');
+  ins.setAttribute('data-ad-format', 'auto');
+  ins.setAttribute('data-full-width-responsive', 'true');
+  el.appendChild(ins);
+  try { (window.adsbygoogle = window.adsbygoogle || []).push({}); } catch(e){}
+}
+
+// ============================================================ Feature unlock system
+// أدوات بتتفّتح بمؤقّت مجاني قصير (بدون إعلان إجباري — متوافق مع سياسة AdSense).
+// لما الأداة تتفتح مرّة، بتفضل مفتوحة في المتصفّح ده (localStorage).
+const LOCKED_FEATURES = {
+  aiScript:  { dur:5, i18nName:'featureAiScript',  btns:['genScriptBtn','regenScriptBtn'] },
+  mp4:       { dur:5, i18nName:'featureMp4',        btns:[] /* checkbox label */ },
+  batch:     { dur:5, i18nName:'featureBatch',      btns:['batchRunBtn'] },
+  voiceover: { dur:5, i18nName:'featureVoiceover',  btns:['voRecordBtn'] },
+};
+const UNLOCK_KEY = 'aiReelUnlocks';
+// lookup آمن لسلاسل i18n (يُعرَّف I18N لاحقًا في الملف، لكن الاستدعاء بيحصل وقت التشغيل بعد التحميل).
+function zI18n(key){ try { const d = (typeof I18N!=='undefined' && I18N[currentUiLang]) || (typeof I18N!=='undefined' && I18N.en) || {}; return d[key] !== undefined ? d[key] : key; } catch(e){ return key; } }
+function loadUnlocks(){ try { return JSON.parse(localStorage.getItem(UNLOCK_KEY) || '{}'); } catch(e){ return {}; } }
+function saveUnlocks(u){ try { localStorage.setItem(UNLOCK_KEY, JSON.stringify(u)); } catch(e){} }
+function isUnlocked(id){ return !!loadUnlocks()[id]; }
+function markUnlocked(id){ const u = loadUnlocks(); u[id] = Date.now(); saveUnlocks(u); refreshLockIndicators(); }
+
+// القلب المركزي: يرجع true لو الأداة مفتوحة (أو اتفتحت الآن)، false لو المستخدم لغى.
+async function requireUnlock(featureId){
+  if (isUnlocked(featureId)) return true;
+  const ok = await openUnlockModal(featureId);
+  if (ok) markUnlocked(featureId);
+  return ok;
+}
+
+let _unlockResolver = null;
+let _unlockInterval = null;
+let _unlockFeatureId = null;
+function closeUnlockModal(){
+  const ov = document.getElementById('unlockOverlay');
+  ov.classList.remove('show');
+  if (_unlockInterval){ clearInterval(_unlockInterval); _unlockInterval = null; }
+}
+// يفتح مودال القفل ويبدأ عدّاد تنازلي، يرجع Promise<boolean>.
+function openUnlockModal(featureId){
+  const feat = LOCKED_FEATURES[featureId];
+  const ov = document.getElementById('unlockOverlay');
+  const nameEl = document.getElementById('unlockFeatureName');
+  const msgEl = document.getElementById('unlockMsg');
+  const timerEl = document.getElementById('unlockTimer');
+  const confirmBtn = document.getElementById('unlockConfirmBtn');
+  const cancelBtn = document.getElementById('unlockCancelBtn');
+  const t = zI18n(feat.i18nName);
+  nameEl.textContent = t;
+  msgEl.textContent = zI18n('unlockWaiting');
+  confirmBtn.disabled = true;
+  confirmBtn.textContent = zI18n('unlockConfirmBtn');
+  cancelBtn.textContent = zI18n('unlockCancelBtn');
+  timerEl.classList.remove('done');
+  let remaining = feat.dur || 5;
+  timerEl.textContent = remaining;
+  ov.classList.add('show');
+  _unlockFeatureId = featureId;
+  return new Promise((resolve) => {
+    _unlockResolver = resolve;
+    if (_unlockInterval) clearInterval(_unlockInterval);
+    _unlockInterval = setInterval(() => {
+      remaining--;
+      if (remaining <= 0){
+        clearInterval(_unlockInterval); _unlockInterval = null;
+        timerEl.textContent = '✓';
+        timerEl.classList.add('done');
+        msgEl.textContent = zI18n('unlockMsg');
+        confirmBtn.disabled = false;
+      } else {
+        timerEl.textContent = remaining;
+      }
+    }, 1000);
+  });
+}
+// يربط أزرار المودال مرة واحدة عند الإقلاع.
+function initUnlockModal(){
+  const ov = document.getElementById('unlockOverlay');
+  const confirmBtn = document.getElementById('unlockConfirmBtn');
+  const cancelBtn = document.getElementById('unlockCancelBtn');
+  const closeX = document.getElementById('unlockCloseX');
+  confirmBtn.addEventListener('click', () => {
+    if (confirmBtn.disabled) return;
+    closeUnlockModal();
+    if (_unlockResolver){ _unlockResolver(true); _unlockResolver = null; }
+  });
+  const cancel = () => {
+    closeUnlockModal();
+    if (_unlockResolver){ _unlockResolver(false); _unlockResolver = null; }
+  };
+  cancelBtn.addEventListener('click', cancel);
+  closeX.addEventListener('click', cancel);
+  ov.addEventListener('click', (e) => { if (e.target === ov) cancel(); });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && ov.classList.contains('show')) cancel();
+  });
+}
+
+// يحدّث أيقونات القفل 🔒 على الأزرار + البادج في التوب بار.
+function refreshLockIndicators(){
+  const ids = Object.keys(LOCKED_FEATURES);
+  let lockedCount = 0;
+  ids.forEach(id => {
+    const feat = LOCKED_FEATURES[id];
+    const unlocked = isUnlocked(id);
+    if (!unlocked) lockedCount++;
+    const tooltip = zI18n('lockTooltip');
+    (feat.btns || []).forEach(bid => {
+      const b = document.getElementById(bid);
+      if (!b) return;
+      // خزّن النص الأساسي مرة واحدة (بدون البريفكس) لو لسه مخزّناهوش
+      if (!b.dataset.baseText) b.dataset.baseText = b.textContent.replace(/^🔒\s*/, '');
+      const base = b.dataset.baseText;
+      if (unlocked){
+        b.textContent = base; b.removeAttribute('title');
+      } else {
+        b.textContent = '🔒 ' + base; b.title = tooltip;
+      }
+    });
+  });
+  // بادج التوب بار
+  const badge = document.getElementById('unlockBadge');
+  if (badge){
+    if (lockedCount === 0){
+      badge.textContent = '🔓 ' + zI18n('unlockBadgeAll');
+      badge.classList.add('all');
+    } else {
+      badge.textContent = '🔒 ' + zI18n('unlockBadgeLocked').replace('{n}', lockedCount);
+      badge.classList.remove('all');
+    }
+  }
 }
 
 // ============================================================ state
@@ -1250,6 +1509,7 @@ async function generateScriptFromAI(topic, lang, dialect, tone, research){
 
 // Orchestrates: read inputs -> search (optional) -> generate -> show editable preview.
 async function runScriptGenerator(){
+  if(!(await requireUnlock('aiScript'))) return;
   const btn = document.getElementById('genScriptBtn');
   const errEl = document.getElementById('genScriptError');
   const statusEl = document.getElementById('genScriptStatus');
@@ -3287,6 +3547,11 @@ async function getFfmpeg(){
   return ffmpegInstance;
 }
 async function convertWebmToMp4(webmBlob, filenamePrefix){
+  if(!(await requireUnlock('mp4'))) {
+    const statusEl = document.getElementById('statusNote');
+    if (statusEl) statusEl.textContent = zI18n('mp4SkippedLocked');
+    return null;
+  }
   const ff = await getFfmpeg();
   const wrap = document.getElementById('convertProgressWrap');
   const fill = document.getElementById('convertProgressFill');
@@ -3561,6 +3826,7 @@ document.getElementById('musicClearBtn').addEventListener('click', () => {
 });
 
 document.getElementById('voRecordBtn').addEventListener('click', async () => {
+  if(!(await requireUnlock('voiceover'))) return;
   try {
     voStream = await navigator.mediaDevices.getUserMedia({ audio:true });
   } catch(e){
@@ -3604,6 +3870,7 @@ function logBatch(msg){
   log.scrollTop = log.scrollHeight;
 }
 document.getElementById('batchRunBtn').addEventListener('click', async () => {
+  if(!(await requireUnlock('batch'))) return;
   const btn = document.getElementById('batchRunBtn');
   const errEl = document.getElementById('batchError');
   const log = document.getElementById('batchLog');
@@ -3845,6 +4112,20 @@ const I18N = {
     fbAutoInfo:'Auto-detected info (sent with your message)',
     fbCopy:'📋 Copy', fbCopyDone:'✓ Copied! Paste it in the channel you opened.',
     fbSendTelegram:'Telegram', fbSendWhatsApp:'WhatsApp', fbSendDiscord:'Discord', fbSendGithub:'GitHub',
+    unlockTitle:'🔓 Unlock Feature',
+    unlockMsg:'This feature is free — just wait a few seconds.',
+    unlockWaiting:'Preparing your free access...',
+    unlockConfirmBtn:'✅ Use Feature',
+    unlockCancelBtn:'Cancel',
+    unlockFreeNote:'Free — no payment, no signup. Just a short wait.',
+    featureAiScript:'AI Script Generator',
+    featureMp4:'MP4 Export',
+    featureBatch:'Batch Export',
+    featureVoiceover:'Voiceover Recording',
+    lockTooltip:'Unlock with a free timer',
+    unlockBadgeLocked:'{n}/4 unlocked',
+    unlockBadgeAll:'All unlocked',
+    mp4SkippedLocked:'MP4 locked — downloaded WebM instead',
   },
   ar: {
     appTitle:'استوديو الريلز بالذكاء الاصطناعي', appSubtitle:'نص ← ذكاء اصطناعي ← مشاهد متحركة ← فيديو · مع وضع Benchmark',
@@ -3914,6 +4195,20 @@ const I18N = {
     fbAutoInfo:'معلومات تلقائية (بتتبعت مع رسالتك)',
     fbCopy:'📋 نسخ', fbCopyDone:'✓ اتنسخ! الصقه في القناة اللي فتحت.',
     fbSendTelegram:'تليجرام', fbSendWhatsApp:'واتساب', fbSendDiscord:'ديسكورد', fbSendGithub:'جيت هاب',
+    unlockTitle:'🔓 فتح الميزة',
+    unlockMsg:'الميزة مجانية — انتظر ثوانٍ قليلة فقط.',
+    unlockWaiting:'جاري التجهيز...',
+    unlockConfirmBtn:'✅ استخدم الميزة',
+    unlockCancelBtn:'إلغاء',
+    unlockFreeNote:'مجاني — لا دفع، لا تسجيل. مجرد انتظار قصير.',
+    featureAiScript:'مُولّد السكربت بالذكاء الاصطناعي',
+    featureMp4:'تصدير MP4',
+    featureBatch:'التصدير الدفعي',
+    featureVoiceover:'تسجيل التعليق الصوتي',
+    lockTooltip:'يُفتح بمؤقّت مجاني',
+    unlockBadgeLocked:'{n}/4 مفتوح',
+    unlockBadgeAll:'الكل مفتوح',
+    mp4SkippedLocked:'MP4 مقفّل — تم تحميل WebM بدلاً منه',
   },
 };
 
@@ -4183,6 +4478,14 @@ plainText('AI Reel Studio — ready', W/2, H/2, 34, 600, '#48505e', 1, 'Inter', 
 plainText('Connect AI → write text → Generate · or Benchmark tab', W/2, H/2+50, 22, 500, '#48505e', 0.8, 'IBM Plex Mono', 'center');
 renderSceneEditor();
 checkLmStudio();
+
+// Initialize AdSense banners (using new dynamic system)
+placeAd('adTop', 'top');
+placeAd('adSide', 'side');
+
+// Initialize unlock modal and lock indicators
+initUnlockModal();
+refreshLockIndicators();
 
 // ---- restore / bootstrap the project system ----
 (function initProjects(){
