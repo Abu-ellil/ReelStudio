@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>سكربت فيديو تسويقي — AI Reel Studio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=IBM+Plex+Mono&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0a0e14;
+      --bg-soft: #11161f;
+      --bg-card: #151b26;
+      --border: #1e2733;
+      --accent: #00e5ff;
+      --accent-dim: #00838f;
+      --text: #e8edf2;
+      --text-dim: #8a9aaa;
+      --voice: #00e5ff;
+      --visual: #ff8a3d;
+      --audio: #b388ff;
+      --time: #ffd54f;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Cairo', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.8;
+      padding: 40px 20px;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    /* ===== Header ===== */
+    .header {
+      text-align: center;
+      padding: 40px 30px;
+      background: linear-gradient(135deg, var(--bg-card), var(--bg-soft));
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      margin-bottom: 30px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .header::before {
+      content: "";
+      position: absolute;
+      top: 0; right: 0;
+      width: 300px; height: 300px;
+      background: radial-gradient(circle, rgba(0,229,255,0.08), transparent 70%);
+      pointer-events: none;
+    }
+
+    .header h1 {
+      font-size: 2.2rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--accent), #fff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 16px;
+    }
+
+    .header .tagline {
+      font-size: 1rem;
+      color: var(--text-dim);
+      max-width: 700px;
+      margin: 0 auto 24px;
+    }
+
+    .header .angle {
+      display: inline-block;
+      padding: 10px 20px;
+      background: rgba(0, 229, 255, 0.08);
+      border: 1px solid var(--accent-dim);
+      border-radius: 50px;
+      font-size: 0.9rem;
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    /* ===== Meta Info ===== */
+    .meta-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+      margin-bottom: 30px;
+    }
+
+    .meta-item {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 18px;
+    }
+
+    .meta-item .label {
+      font-size: 0.8rem;
+      color: var(--text-dim);
+      margin-bottom: 4px;
+    }
+
+    .meta-item .value {
+      font-size: 0.95rem;
+      font-weight: 600;
+    }
+
+    /* ===== Scene Card ===== */
+    .scene {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      margin-bottom: 24px;
+      overflow: hidden;
+    }
+
+    .scene-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px 24px;
+      background: var(--bg-soft);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .scene-header .scene-title {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 1.2rem;
+      font-weight: 700;
+    }
+
+    .scene-num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 34px; height: 34px;
+      background: rgba(0, 229, 255, 0.12);
+      border: 1px solid var(--accent-dim);
+      border-radius: 50%;
+      color: var(--accent);
+      font-size: 0.95rem;
+      font-weight: 800;
+    }
+
+    .timestamp {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.85rem;
+      color: var(--time);
+      background: rgba(255, 213, 79, 0.08);
+      padding: 5px 12px;
+      border-radius: 50px;
+      direction: ltr;
+    }
+
+    .scene-body {
+      padding: 24px;
+    }
+
+    /* ===== Block Types ===== */
+    .block {
+      margin-bottom: 20px;
+      padding: 16px 18px;
+      border-radius: 10px;
+      border-right: 3px solid;
+    }
+
+    .block:last-child { margin-bottom: 0; }
+
+    .block-label {
+      display: inline-block;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 3px 10px;
+      border-radius: 50px;
+      margin-bottom: 10px;
+      direction: ltr;
+    }
+
+    .block-voice {
+      background: rgba(0, 229, 255, 0.05);
+      border-color: var(--voice);
+    }
+    .block-voice .block-label {
+      background: rgba(0, 229, 255, 0.15);
+      color: var(--voice);
+    }
+
+    .block-visual {
+      background: rgba(255, 138, 61, 0.05);
+      border-color: var(--visual);
+    }
+    .block-visual .block-label {
+      background: rgba(255, 138, 61, 0.15);
+      color: var(--visual);
+    }
+
+    .block-audio {
+      background: rgba(179, 136, 255, 0.05);
+      border-color: var(--audio);
+    }
+    .block-audio .block-label {
+      background: rgba(179, 136, 255, 0.15);
+      color: var(--audio);
+    }
+
+    .block p {
+      font-size: 1.02rem;
+      line-height: 1.9;
+    }
+
+    .block ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    .block ul li {
+      padding-right: 20px;
+      position: relative;
+      margin-bottom: 6px;
+    }
+
+    .block ul li::before {
+      content: "◂";
+      position: absolute;
+      right: 0;
+      color: var(--text-dim);
+    }
+
+    .block ul li:last-child { margin-bottom: 0; }
+
+    .voiceover {
+      font-size: 1.08rem;
+      font-weight: 600;
+      line-height: 2;
+    }
+
+    .voiceover strong {
+      color: var(--accent);
+      font-weight: 700;
+    }
+
+    /* ===== Sub-features ===== */
+    .feature {
+      margin-top: 20px;
+      padding-top: 20px;
+      border-top: 1px dashed var(--border);
+    }
+
+    .feature:first-child {
+      margin-top: 0;
+      padding-top: 0;
+      border-top: none;
+    }
+
+    .feature-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 14px;
+    }
+
+    /* ===== Summary Table ===== */
+    .table-wrap {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+      margin-bottom: 30px;
+    }
+
+    .table-wrap h2 {
+      padding: 18px 24px;
+      background: var(--bg-soft);
+      border-bottom: 1px solid var(--border);
+      font-size: 1.2rem;
+      font-weight: 700;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th, td {
+      padding: 12px 20px;
+      text-align: right;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.95rem;
+    }
+
+    th {
+      background: var(--bg-soft);
+      font-weight: 700;
+      color: var(--accent);
+      font-size: 0.85rem;
+    }
+
+    tr:last-child td { border-bottom: none; }
+    tr:last-child { background: rgba(0,229,255,0.04); font-weight: 700; }
+
+    td .mono { font-family: 'IBM Plex Mono', monospace; direction: ltr; }
+
+    /* ===== Section Title ===== */
+    .section-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin: 40px 0 20px;
+      padding-bottom: 12px;
+      border-bottom: 2px solid var(--accent-dim);
+    }
+
+    /* ===== Hook Alternatives ===== */
+    .hooks {
+      display: grid;
+      gap: 14px;
+    }
+
+    .hook-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-right: 3px solid var(--accent);
+      border-radius: 10px;
+      padding: 18px 22px;
+    }
+
+    .hook-card .hook-label {
+      font-size: 0.8rem;
+      color: var(--accent);
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .hook-card p {
+      font-size: 1rem;
+      font-weight: 600;
+      line-height: 1.8;
+    }
+
+    /* ===== Notes ===== */
+    .notes {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 24px;
+      margin-bottom: 30px;
+    }
+
+    .notes ul { list-style: none; padding: 0; }
+    .notes ul li {
+      padding-right: 24px;
+      position: relative;
+      margin-bottom: 12px;
+      line-height: 1.8;
+    }
+    .notes ul li::before {
+      content: "◆";
+      position: absolute;
+      right: 0;
+      color: var(--accent);
+    }
+
+    /* English inline */
+    .en {
+      font-family: 'IBM Plex Mono', monospace;
+      direction: ltr;
+      display: inline-block;
+      background: rgba(255,255,255,0.05);
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-size: 0.9em;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+
+    <!-- ===== Header ===== -->
+    <div class="header">
+      <h1>سكربت فيديو تسويقي — AI Reel Studio</h1>
+      <p class="tagline">
+        أداة بتسرّع أصعب جزء في أي فيديو — الأنيميشن والموشن جرافيكس اللي بتركّبها فوق فيديوك.
+        مش بتعمل الفيديو كله، بتعمل الـ visual layer الجاهز.
+      </p>
+      <span class="angle">اللهجة المصرية · ~100 ثانية</span>
+    </div>
+
+    <!-- ===== Meta ===== -->
+    <div class="meta-grid">
+      <div class="meta-item">
+        <div class="label">نسبة الفيديو</div>
+        <div class="value">9:16 (ريلز/شورتس)</div>
+      </div>
+      <div class="meta-item">
+        <div class="label">الخط</div>
+        <div class="value"><span class="en">Cairo</span> (عربي)</div>
+      </div>
+      <div class="meta-item">
+        <div class="label">الستايل</div>
+        <div class="value"><span class="en">Dark + Neon Cyan</span></div>
+      </div>
+      <div class="meta-item">
+        <div class="label">الموسيقى</div>
+        <div class="value"><span class="en">synthesized built-in</span></div>
+      </div>
+    </div>
+
+    <!-- ===== Scene 1 ===== -->
+    <div class="scene">
+      <div class="scene-header">
+        <div class="scene-title">
+          <span class="scene-num">1</span>
+          الهوك
+        </div>
+        <span class="timestamp">00:00 – 00:07</span>
+      </div>
+      <div class="scene-body">
+        <div class="block block-voice">
+          <span class="block-label">Voiceover</span>
+          <p class="voiceover">
+            الجزء اللي بياخد منك أكتر وقت في أي فيديو... مش التصوير ولا المونتاج.
+            <strong>الأرقام اللي بتعدّ... والـ lower thirds... والمقارنات والتشارتس والأنيميشن</strong>
+            اللي بترسمها بيدك في <span class="en">After Effects</span>. تخيّل لو ده حصل في ثواني.
+          </p>
+        </div>
+        <div class="block block-visual">
+          <span class="block-label">Visual</span>
+          <ul>
+            <li>سؤال بيظهر على الشاشة.</li>
+            <li>لقطة <span class="en">After Effects timeline</span> معقدة.</li>
+            <li><span class="en">cut</span> سريع لمشهد <span class="en">stat</span> بـ <span class="en">count-up</span> (من 0 لـ 98%) بيخلص في ثانيتين.</li>
+            <li>نص <span class="en">burn-in</span>: «الأنيميشن اللي بيوقعك».</li>
+          </ul>
+        </div>
+        <div class="block block-audio">
+          <span class="block-label">Audio</span>
+          <ul>
+            <li><span class="en">Whoosh</span> في الأول.</li>
+            <li>صوت ساعة بتلف بسرعة، بعدين <span class="en">stop</span> مفاجئ.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== Scene 2 ===== -->
+    <div class="scene">
+      <div class="scene-header">
+        <div class="scene-title">
+          <span class="scene-num">2</span>
+          المشكلة
+        </div>
+        <span class="timestamp">00:07 – 00:18</span>
+      </div>
+      <div class="scene-body">
+        <div class="block block-voice">
+          <span class="block-label">Voiceover</span>
+          <p class="voiceover">
+            إنت كرييتور أو مسوّق... عايز ترقم <span class="en">stat</span> متحرك؟ <span class="en">lower third</span>؟ مقارنة بين حاجتين؟ <span class="en">leaderboard</span>؟
+            <br><br>
+            بتفتح <span class="en">After Effects</span> وتقعد <strong>ساعات</strong> تـ <span class="en">keyframe</span> وتظبط <span class="en">easing</span>... أو بتدفع لمصمم موشن كل مرة.
+            <br><br>
+            والنتيجة؟ إما الفيديو يطلع من غير شغل حركي ويبقى بايظ... <strong>أو يومك يضيع</strong> في حاجة تفتح وتقفل البرنامج عشان 3 ثواني أنيميشن.
+          </p>
+        </div>
+        <div class="block block-visual">
+          <span class="block-label">Visual</span>
+          <ul>
+            <li><span class="en">split-screen</span>:</li>
+            <li>الناحية الأولى: <span class="en">After Effects keyframes</span> كتير + ساعة بتلف.</li>
+            <li>الناحية التانية: فيديو فاضي من غير جرافيكس (<span class="en">flat</span>).</li>
+            <li>نص بيظهر: «3 ثواني = 3 ساعات».</li>
+          </ul>
+        </div>
+        <div class="block block-audio">
+          <span class="block-label">Audio</span>
+          <ul>
+            <li>الموسيقى تقيلة (إحساس إحباط).</li>
+            <li><span class="en">glitch SFX</span>.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== Scene 3 ===== -->
+    <div class="scene">
+      <div class="scene-header">
+        <div class="scene-title">
+          <span class="scene-num">3</span>
+          الحل
+        </div>
+        <span class="timestamp">00:18 – 00:27</span>
+      </div>
+      <div class="scene-body">
+        <div class="block block-voice">
+          <span class="block-label">Voiceover</span>
+          <p class="voiceover">
+            علشان كده في <strong>AI Reel Studio</strong>.
+            <br><br>
+            أداة بتعملك <strong>كل الأنيميشنز والجرافيكس اللي بتظهر فوق الفيديو</strong>:
+            <span class="en">stats</span> بتعدّ، تشارتس، <span class="en">lower thirds</span>، <span class="en">leaderboards</span>، مقارنات... جاهزة للتركيب على أي فيديو بتاعك.
+            <br><br>
+            والـ 27 نوع مشهد دول = الـ <span class="en">building blocks</span> اللي محتاجها.
+          </p>
+        </div>
+        <div class="block block-visual">
+          <span class="block-label">Visual</span>
+          <ul>
+            <li>لوكو الأداة بيظهر <span class="en">big</span> (<span class="en">Neon glow</span>).</li>
+            <li><span class="en">flip</span> سريع بين 6 مشاهد: <span class="en">stat, donut, comparison, leaderboard, lower-third, gauge</span>.</li>
+            <li>نص: «أنيميشن جاهز ← ركّبه على فيديوك».</li>
+          </ul>
+        </div>
+        <div class="block block-audio">
+          <span class="block-label">Audio</span>
+          <ul>
+            <li><span class="en">beat drop</span> عند اسم الأداة.</li>
+            <li>الموسيقى تتحول لإيجابية/طاقة.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== Scene 4 — Features ===== -->
+    <div class="scene">
+      <div class="scene-header">
+        <div class="scene-title">
+          <span class="scene-num">4</span>
+          إزاي بتدمجها (المميزات)
+        </div>
+        <span class="timestamp">00:27 – 00:48</span>
+      </div>
+      <div class="scene-body">
+
+        <div class="feature">
+          <div class="feature-title">① <span class="en">Chroma Key</span> — خلفية شفافة</div>
+          <div class="block block-voice">
+            <span class="block-label">Voiceover</span>
+            <p>
+              عايز تركّب المشهد فوق تصويرك؟ فيه <span class="en">Chroma Key</span> مبني جوّه الأداة:
+              أخضر، أزرق، أسود... تطلّع المشهد وتـركّبه فوق فيديوك في أي برنامج مونتاج. زي ما انت.
+            </p>
+          </div>
+          <div class="block block-visual">
+            <span class="block-label">Visual</span>
+            <ul>
+              <li>مشهد <span class="en">stat</span> على خلفية خضراء.</li>
+              <li><span class="en">composite</span> على فيديو فعلي (ريلز بتاع <span class="en">creator</span>).</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="feature">
+          <div class="feature-title">② من نص لسكريبت لمشاهد</div>
+          <div class="block block-voice">
+            <span class="block-label">Voiceover</span>
+            <p>
+              اكتب فكرتك أو أرقامك... والأداة بتدوّر على النت وبتكتبلك السكريبت، وبعدين بتحوّله لمشاهد لحظياً.
+              معدّل ومستورد جاهز.
+            </p>
+          </div>
+          <div class="block block-visual">
+            <span class="block-label">Visual</span>
+            <ul>
+              <li><span class="en">topic ← research ← script ← scenes</span> بتنبني.</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="feature">
+          <div class="feature-title">③ بتفهم عربي بجد</div>
+          <div class="block block-voice">
+            <span class="block-label">Voiceover</span>
+            <p>
+              فصحى، مصري، خليجي، شامي، مغربي... بخط <span class="en">Cairo</span> المظبوط <span class="en">RTL</span>.
+              أنيميشن عربي من غير ما الكلام يتكسّر.
+            </p>
+          </div>
+          <div class="block block-visual">
+            <span class="block-label">Visual</span>
+            <ul>
+              <li>5 لهجات <span class="en">flip cards</span>.</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="feature">
+          <div class="feature-title">④ <span class="en">Brand Kit</span></div>
+          <div class="block block-voice">
+            <span class="block-label">Voiceover</span>
+            <p>
+              ألوان، ثيمات، لوجو، موسيقى <span class="en">royalty-free</span> مدمجة... كل أنيميشنزك على نفس هويتك البصرية.
+            </p>
+          </div>
+          <div class="block block-visual">
+            <span class="block-label">Visual</span>
+            <ul>
+              <li><span class="en">themes</span> بتتغيّر (<span class="en">Neon ← Sunset ← Bold Red</span>).</li>
+              <li>لوجو بيظهر في <span class="en">corner</span>.</li>
+            </ul>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ===== Scene 5 ===== -->
+    <div class="scene">
+      <div class="scene-header">
+        <div class="scene-title">
+          <span class="scene-num">5</span>
+          لمين الأداة دي؟
+        </div>
+        <span class="timestamp">00:48 – 01:08</span>
+      </div>
+      <div class="scene-body">
+        <div class="block block-voice">
+          <span class="block-label">Voiceover</span>
+          <p class="voiceover">
+            وده مش بس للكرييتورز...
+            <br><br>
+            بتعمل ريلز أو شورتس؟ <strong>أنيميشن احترافي</strong> يرفع جودة أي فيديو.
+            <br><br>
+            بتشتغل على نماذج <span class="en">AI</span>؟ فيه <strong><span class="en">Benchmark Mode</span></strong> — بتديله أرقام الـ <span class="en">tokens</span> والـ <span class="en">GPU</span>، وبيعملك <span class="en">leaderboard</span> متحرك كامل.
+            <br><br>
+            مسوّق؟ حوّل أي أرقام أو عرض لفيديو بيبيع.
+            <br><br>
+            بتفكر في فكرة؟ اكتبها... والأداة بتحوّلها لمشاهد.
+          </p>
+        </div>
+        <div class="block block-visual">
+          <span class="block-label">Visual</span>
+          <ul>
+            <li>4 بطاقات بتظهر بالتتابع بأيقونات:</li>
+            <li>كرييتور (كاميرا) · <span class="en">AI / benchmark leaderboard</span> (روبوت) · تسويق / <span class="en">chart</span> (جراف) · فكرة (لمبة).</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== Scene 6 ===== -->
+    <div class="scene">
+      <div class="scene-header">
+        <div class="scene-title">
+          <span class="scene-num">6</span>
+          الجملة المفصلية (الخصوصية)
+        </div>
+        <span class="timestamp">01:08 – 01:18</span>
+      </div>
+      <div class="scene-body">
+        <div class="block block-voice">
+          <span class="block-label">Voiceover</span>
+          <p class="voiceover">
+            واللي بيفرّقها عن أي أداة تانية؟ <strong>شغّالها على جهازك بالكامل.</strong>
+            <br><br>
+            لا سحابة، لا اشتراك شهري، لا حد بيشوف بياناتك أو أفكارك.
+            <br><br>
+            بتشتغل مع <span class="en">LM Studio</span> محلياً... أو أي <span class="en">API</span> لو حابب.
+          </p>
+        </div>
+        <div class="block block-visual">
+          <span class="block-label">Visual</span>
+          <ul>
+            <li>رسمة <span class="en">laptop</span> عليها <span class="en">lock</span> 🔒.</li>
+            <li>بداخلها الأداة.</li>
+            <li>نص: «بياناتك عندك».</li>
+            <li>سهم بيتجه لسحابة + علامة غلط (X).</li>
+          </ul>
+        </div>
+        <div class="block block-audio">
+          <span class="block-label">Audio</span>
+          <ul>
+            <li>الموسيقى تهدى شوية (لحظة صدق وثقة).</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== Scene 7 ===== -->
+    <div class="scene">
+      <div class="scene-header">
+        <div class="scene-title">
+          <span class="scene-num">7</span>
+          الـ CTA (دعوة للإجراء)
+        </div>
+        <span class="timestamp">01:18 – 01:25</span>
+      </div>
+      <div class="scene-body">
+        <div class="block block-voice">
+          <span class="block-label">Voiceover</span>
+          <p class="voiceover">
+            عايز تنتج أنيميشنز احترافية <strong>أسرع، مجاني، وبخصوصية كاملة</strong>؟
+            <br><br>
+            الأداة مجانية والرابط تحت. <strong>جرّبها دلوقتي.</strong>
+          </p>
+        </div>
+        <div class="block block-visual">
+          <span class="block-label">Visual</span>
+          <ul>
+            <li>زر <span class="en">CTA</span> كبير: «جرّبها مجاناً».</li>
+            <li>سهم لتحت للرابط.</li>
+            <li>نص <span class="en">burn-in</span>: «مجاني · محلي · بالعربي».</li>
+          </ul>
+        </div>
+        <div class="block block-audio">
+          <span class="block-label">Audio</span>
+          <ul>
+            <li>الموسيقى توصل لذروتها وتنتهي بـ <span class="en">final hit</span> واضح.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== Summary Table ===== -->
+    <div class="table-wrap">
+      <h2>📋 ملخص الإخراج (للمونتاج)</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>المشهد</th>
+            <th>الثواني</th>
+            <th>الهدف</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>1</td><td>الهوك</td><td><span class="mono">7</span></td><td>صدم + وعد</td></tr>
+          <tr><td>2</td><td>المشكلة</td><td><span class="mono">11</span></td><td>أجّط المشكلة (وقت/فلوس/جودة)</td></tr>
+          <tr><td>3</td><td>الحل</td><td><span class="mono">9</span></td><td>عرّف الأداة + التمييز</td></tr>
+          <tr><td>4</td><td>المميزات</td><td><span class="mono">21</span></td><td>إثبات القيمة + الـ workflow</td></tr>
+          <tr><td>5</td><td>لمين</td><td><span class="mono">20</span></td><td>توسيع الجمهور</td></tr>
+          <tr><td>6</td><td>الخصوصية</td><td><span class="mono">10</span></td><td>تعزيز الزاوية الرئيسية</td></tr>
+          <tr><td>7</td><td>CTA</td><td><span class="mono">7</span></td><td>اكشن واضح</td></tr>
+          <tr><td colspan="2">الإجمالي</td><td><span class="mono">~85 ث</span></td><td></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ===== Hook Alternatives ===== -->
+    <h2 class="section-title">🎯 3 بدائل للهوك</h2>
+    <div class="hooks">
+      <div class="hook-card">
+        <div class="hook-label">أ — صادم رقمي</div>
+        <p>عملت ريلز بـ 3 ساعات مونتاج؟ أنا عملت الأنيميشن بتاعه في 30 ثانية... ومحدش شاف النص غير جهازي.</p>
+      </div>
+      <div class="hook-card">
+        <div class="hook-label">ب — سؤال تأنيب ضمير</div>
+        <p>بتدفع اشتراك شهري عشان أداة AI تطلع بياناتك للسحابة؟ طب ما تسمع.</p>
+      </div>
+      <div class="hook-card">
+        <div class="hook-label">ج — مباشر قوي</div>
+        <p>في أدوات AI بتعمل فيديو... وفي أداة بتخليك تطلّع الأنيميشن بتاعك مجاني، محلي، بالعربي. دي القصة.</p>
+      </div>
+    </div>
+
+    <!-- ===== Copywriting Notes ===== -->
+    <h2 class="section-title">📝 ملاحظات الـ Copywriting</h2>
+    <div class="notes">
+      <ul>
+        <li><strong>الـ hook</strong> بيستخدم <span class="en">pattern interrupt</span>: وعد كبير + تحدّي ضمني للسائد.</li>
+        <li><strong>المشكلة</strong> بتجّط 3 آلام ملموسة: وقت + فلوس + جودة — علشان تغطي كل شرائح الجمهور.</li>
+        <li><strong>المميزات</strong> مرتّبة من الـ wow (Chroma Key كميزة تكامل) للعملي (Brand Kit).</li>
+        <li><strong>الخصوصية</strong> اتحطت في الآخر punchline عشان تتذكّر — آخر انطباع بيفضل مع المشاهد.</li>
+        <li><strong>الـ CTA</strong> فيه verb + qualifier + urgency: «جرّبها دلوقتي».</li>
+      </ul>
+    </div>
+
+  </div>
+</body>
+</html>

@@ -7,7 +7,7 @@
   2. في بلوجر: Pages → New Page → بدّل لـ HTML view (أيقونة <>)
   3. الصق الكود
   4. استبدل USERNAME و REPO برابط GitHub Pages بتاعك
-     مثال: https://aboellil.github.io/reel-studio/app.html
+     مثال: https://abu-ellil.github.io/ReelStudio/app.html
   5. احفظ وانشر
   ====================================================================
 -->
@@ -64,7 +64,7 @@
 <!-- ═══ التطبيق ═══ -->
 <div id="reelWrap">
   <iframe id="reelFrame"
-          src="https://USERNAME.github.io/REPO/app.html"
+          src="https://abu-ellil.github.io/ReelStudio/app.html"
           scrolling="no"
           loading="lazy"
           allow="fullscreen"
@@ -82,10 +82,17 @@
 <script>//<![CDATA[
 (function(){
   var f = document.getElementById('reelFrame');
+  var MAX = 8000; // سقف أمان: نمنع أي ارتفاع أكبر من ده (حماية من حلقة النمو)
+  var lastH = 0;
   // استقبال ارتفاع التطبيق وتطبيقه على الـ iframe
   window.addEventListener('message', function(e){
-    if (e.data && e.data.type === 'reelResize' && e.data.height){
-      f.style.height = e.data.height + 'px';
+    var h = e.data && e.data.type === 'reelResize' && e.data.height;
+    if (!h || !isFinite(h)) return;
+    if (h > MAX) h = MAX;
+    // تجاهل التغييرات الصغيرة لمنع التذبذب
+    if (Math.abs(h - lastH) >= 1){
+      lastH = h;
+      f.style.height = h + 'px';
     }
   });
 })();

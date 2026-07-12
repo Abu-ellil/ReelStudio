@@ -15,9 +15,13 @@
     --editor-font-size:13px; /* حجم خط حقول النص (قابل للتحكم عبر A−/A+) */
   }
   *{box-sizing:border-box;}
+  /* خلفية الجذر تغطّي كامل الشاشة حتى لو المحتوى قصير.
+     بنستخدم html بدل min-height:100vh على body، لأن vh جوّه iframe
+     بيساوي ارتفاع الـ iframe نفسه ويعمل حلقة نم لا نهائية مع بلوجر. */
+  html{background:var(--bg);}
   body{
     margin:0; background:var(--bg); color:var(--fg);
-    font-family:'Inter',sans-serif; padding:24px; min-height:100vh;
+    font-family:'Inter',sans-serif; padding:24px;
   }
   .mono{font-family:'IBM Plex Mono',monospace;}
   h1{font-size:18px;font-weight:800;margin:0 0 2px 0;}
@@ -28,7 +32,7 @@
   .layout > .col.center{flex:1 1 0;min-width:0;}
   .layout > .col.right{flex:0 0 320px;min-width:0;}
   /* مقابض السحب بين الأعمدة */
-  .gutter{position:relative;width:14px;min-height:100vh;cursor:col-resize;background:transparent;flex:0 0 14px;
+  .gutter{position:relative;width:14px;cursor:col-resize;background:transparent;flex:0 0 14px;
     align-self:stretch;z-index:5;}
   .gutter::before{content:'';position:absolute;top:0;bottom:0;left:50%;width:3px;transform:translateX(-50%);
     background:var(--border);border-radius:2px;transition:background .15s ease, box-shadow .15s ease, width .15s ease;}
@@ -4372,13 +4376,23 @@ applyI18n = function(lang){ _origApplyI18n(lang); renderFbAutoInfo(); };
      يبقى بنفس ارتفاع المحتوى — من غير scrollbar داخلي. -->
 <script>
 (function(){
+  var lastH = 0;
+  // سقف صارم: أي واجهة أطول من ده تعني وجود حلقة نم (feedback loop)
+  // بين الـ iframe والصفحة الأم. نقطعها فوراً ونقفل على ده.
+  var MAX = 8000;
   function sendHeight(){
     var h = Math.max(
       document.body.scrollHeight,
       document.documentElement.scrollHeight,
       document.body.offsetHeight
     );
-    if (h > 0) parent.postMessage({ type:'reelResize', height:h }, '*');
+    if (!isFinite(h) || h <= 0) return;
+    if (h > MAX) h = MAX;
+    // تجاهل التغييرات الصغيرة جداً (أقل من 1px) لمنع التذبذب.
+    if (Math.abs(h - lastH) >= 1){
+      lastH = h;
+      parent.postMessage({ type:'reelResize', height:h }, '*');
+    }
   }
   // عند تحميل كل شيء
   window.addEventListener('load', function(){
@@ -4391,7 +4405,6 @@ applyI18n = function(lang){ _origApplyI18n(lang); renderFbAutoInfo(); };
   if (window.ResizeObserver){
     var ro = new ResizeObserver(function(){ sendHeight(); });
     ro.observe(document.body);
-    ro.observe(document.documentElement);
   }
   // عند تغيير حجم النافذة
   window.addEventListener('resize', sendHeight);
