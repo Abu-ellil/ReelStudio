@@ -100,9 +100,10 @@
   #reelFrame {
     width: 100% !important;
     max-width: 100% !important;
-    height: auto !important;
-    /* نشيل الإجبار على 550px */
-    min-height: 600px;
+    height: 100vh !important;
+    /* ارتفاع كامل لشاشة العرض — يغطّي كل مكونات التطبيق */
+    min-height: 900px;
+    /* حد أدنى مضمون: التطبيق بيه 3 أعمدة + شريط أدوات + ترانسبورت */
     border: 0 !important;
     border-radius: 0 !important;
     margin: 0 !important;
@@ -137,7 +138,7 @@
 
 <!-- ═══ التطبيق ═══ -->
 <div id="reelWrap">
-  <iframe id="reelFrame" src="https://abu-ellil.github.io/ReelStudio/app.html" scrolling="no" loading="lazy"
+  <iframe id="reelFrame" src="https://abu-ellil.github.io/ReelStudio/app.html" scrolling="auto" loading="lazy"
     allow="fullscreen" title="AI Reel Studio"></iframe>
 </div>
 

@@ -785,17 +785,19 @@
 
 // ============================================================ إرسال ارتفاع الـ iframe لبلوجر
 // بلوجر محتاج يعرف ارتفاع المحتوى عشان يظبط ارتفاع الـ iframe.
+// ملاحظة: فيه سكريبت تاني أكثر دقة في آخر الملف بيعمل نفس الغرض.
+// هنفضّل نبعته كمان هنا عشان يشتغل بدري (قبل تحميل بقية السكريبتات).
 function notifyHeight(){
   try{
-    var h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
-    parent.postMessage({type:'reelResize', height:h}, '*');
+    var h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight, document.body.offsetHeight);
+    if (isFinite(h) && h > 0) parent.postMessage({type:'reelResize', height:h}, '*');
   }catch(e){}
 }
 window.addEventListener('load', notifyHeight);
 window.addEventListener('resize', notifyHeight);
-// فحص دوري لأول ثانيتين (لأن المحتوى بيتحمّل تدريجيًا)
+// فحص دوري لأول 3 ثواني (لأن المحتوى والسكريبتات بيتحمّلوا تدريجيًا)
 var _hT = setInterval(notifyHeight, 400);
-setTimeout(function(){ clearInterval(_hT); }, 2500);
+setTimeout(function(){ clearInterval(_hT); }, 3000);
 </script>
 
 <script>
