@@ -24,30 +24,50 @@
   .HeaderBg{                 /* خلفية الهيدر الثابتة */
     display:none !important;
   }
-  /* المحتوى الرئيسي يأخذ العرض كامل بعد إخفاء السايدبار */
-  .bocker .r-r{
+
+  /* ═══ توسيع حاوية المحتوى لعرض الشاشة كامل ═══
+     بنستهدف أكبر عدد ممكن من قوالب بلوجر بأسماء كلاسات مختلفة.
+     أي عنصر فيه max-width بنخليه 100% عشان مفيش هوامش جنب التطبيق. */
+  .bocker .r-r,
+  .post-body,
+  .post-outer,
+  .widget .post,
+  #main-wrapper,
+  .content-outer,
+  .content-inner,
+  .region-inner,
+  body .content,
+  .blog-content,
+  .container.main-content,
+  .post.hentry{
     width:100% !important;
     max-width:100% !important;
+    padding:0 !important;
+    margin:0 !important;
+  }
+  /* نشيل أي حدود أو حشو حوالين البودي الداخلي بتاع التدوينة */
+  .post-body{
+    padding:0 !important;
   }
 
-  /* ═══ تنسيق حاوية التطبيق ═══ */
+  /* ═══ تنسيق حاوية التطبيق — عرض كامل ═══ */
   #reelWrap{
-    max-width:1300px;
-    margin:0 auto;
-    padding:0 15px;
+    width:100%;
+    max-width:100%;        /* ملخّص: عرض كامل من الحافة للحافة */
+    margin:0;
+    padding:0;
   }
   #reelFrame{
     width:100%;
     border:0;
     display:block;
-    border-radius:12px;
-    box-shadow:0 4px 24px rgba(0,0,0,.12);
+    border-radius:0;         /* مربع للحواف عشان يغطّي العرض كامل */
     background:#0a0e14;
     min-height:600px;
   }
   .reel-ad{
-    margin:18px auto;
-    max-width:1300px;
+    margin:12px auto;
+    max-width:100%;
     text-align:center;
     overflow:hidden;
   }
