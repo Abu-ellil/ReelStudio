@@ -1,1 +1,171 @@
- 
+<!--
+  ====================================================================
+  صفحة بلوجر — AI Reel Studio
+  ====================================================================
+  طريقة الاستخدام:
+  1. انسخ كل ما بين السطرين ▼ START ▼ و ▲ END ▲
+  2. في بلوجر: Pages → New Page → بدّل لـ HTML view (أيقونة <>)
+  3. الصق الكود
+  4. استبدل USERNAME و REPO برابط GitHub Pages بتاعك
+     مثال: https://abu-ellil.github.io/ReelStudio/app.html
+  5. احفظ وانشر
+  ====================================================================
+-->
+
+<!-- ▼ START ▼ انسخ من هنا -->
+
+<style>
+  /* ═══ إخفاء الهيدر والسايدبار وشريط الأخبار وقائمة الموبايل ═══ */
+  header#sp-header,
+  /* القائمة العلوية */
+  .sp-header,
+  /* حاوية الهيدر كلها */
+  #shreeta5bar,
+  /* شريط آخر الأخبار */
+  aside#sidepar-wid,
+  /* القائمة الجانبية (السايدبار) */
+  .sidenav,
+  /* قائمة الموبايل المنزلقة */
+  .pos-t-t,
+  /* الخلفية المعتمة لقائمة الموبايل */
+  .HeaderBg {
+    /* خلفية الهيدر الثابتة */
+    display: none !important;
+  }
+
+  /* ═══ 1) أهم سطر: نرفع حد الـ 1200px اللي على كل القالب ═══
+     قالب Seoplus بيحط --maxWidth:1200px على :root.
+     بنخليه كبير جدًا (عمليًا لا نهائي) عشان مفيش حد. */
+  :root {
+    --maxWidth: none !important;
+  }
+
+  /* ═══ 2) الحاوية الأم (.container) — كانت محبوسة على 1200px ═══
+     دي السبب الأساسي للهوامش الجانبية. */
+  .container,
+  .container.site,
+  .HBOTC,
+  .HeaderTOP,
+  .HTOPC {
+    max-width: 100% !important;
+    width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  /* ═══ 3) المحتوى الرئيسي (.r-r) — كان محجوز له 360px للسايدبار ═══
+     القاعدة الأصلية: .r-r{width:calc(100% - 330px - 30px)}
+     بنرجّعه 100% لأننا خبّينا السايدبار. */
+  .r-r,
+  .bocker .r-r {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .bocker {
+    gap: 0 !important;
+  }
+
+  /* ═══ 4) تنشيل الحشو والهوامش والحدود من حاويات التدوينة ═══ */
+  .post-body,
+  .post-outer,
+  .post,
+  .post.hentry,
+  #Blog1,
+  .bobxed,
+  .post.page .bobxed,
+  .widget .post {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
+
+  /* ═══ 5) الـ iframe نفسه — نتغلّب على قاعدة القالب ═══
+     قالب Seoplus بيحط: .post-body iframe{height:550px;margin:20px auto;border-radius:8px}
+     بنلغيها كلها على الـ iframe بتاعنا. */
+  #reelWrap {
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+    padding: 0;
+  }
+
+  .post-body #reelFrame,
+  #reelFrame {
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+    /* نشيل الإجبار على 550px */
+    min-height: 600px;
+    border: 0 !important;
+    border-radius: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    display: block;
+    background: #0a0e14;
+  }
+
+  .reel-ad {
+    margin: 12px 0;
+    max-width: 100%;
+    text-align: center;
+    overflow: hidden;
+  }
+
+  .bobxed {
+    display: none
+  }
+
+  .commentsection {
+    display: none
+  }
+</style>
+
+<!-- ═══ إعلان علوي (اختياري) ═══
+     ضع كود AdSense بتاعك بين الخطين، أو احذف الـ div كله لو مش محتاجه -->
+<div class="reel-ad">
+  <!-- <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXX" crossorigin="anonymous"></script>
+  <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-XXXXXXXX" data-ad-slot="XXXXXXXX" data-ad-format="auto" data-full-width-responsive="true"></ins>
+  <script>(adsbygoogle = window.adsbygoogle || []).push({});</script> -->
+</div>
+
+<!-- ═══ التطبيق ═══ -->
+<div id="reelWrap">
+  <iframe id="reelFrame" src="https://abu-ellil.github.io/ReelStudio/app.html" scrolling="no" loading="lazy"
+    allow="fullscreen" title="AI Reel Studio"></iframe>
+</div>
+
+<!-- ═══ إعلان سفلي (اختياري) ═══
+     ضع كود AdSense بتاعك بين الخطين، أو احذف الـ div كله لو مش محتاجه -->
+<div class="reel-ad">
+  <!-- <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXX" crossorigin="anonymous"></script>
+  <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-XXXXXXXX" data-ad-slot="XXXXXXXX" data-ad-format="auto" data-full-width-responsive="true"></ins>
+  <script>(adsbygoogle = window.adsbygoogle || []).push({});</script> -->
+</div>
+
+<script>//<![CDATA[
+  (function () {
+    var f = document.getElementById('reelFrame');
+    var MAX = 8000; // سقف أمان: نمنع أي ارتفاع أكبر من ده (حماية من حلقة النمو)
+    var lastH = 0;
+    // استقبال ارتفاع التطبيق وتطبيقه على الـ iframe
+    window.addEventListener('message', function (e) {
+      var h = e.data && e.data.type === 'reelResize' && e.data.height;
+      if (!h || !isFinite(h)) return;
+      if (h > MAX) h = MAX;
+      // تجاهل التغييرات الصغيرة لمنع التذبذب
+      if (Math.abs(h - lastH) >= 1) {
+        lastH = h;
+        f.style.height = h + 'px';
+      }
+    });
+  })();
+  //]]></script>
+
+<!-- ▲ END ▲ انسخ لغاية هنا -->
